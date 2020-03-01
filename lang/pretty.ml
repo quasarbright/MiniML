@@ -2,6 +2,7 @@ open Exprs
 open Printf
 open Format
 open Lexing
+open Types
 
 let string_of_prim1 p1 =
   match p1 with

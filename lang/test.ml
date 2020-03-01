@@ -22,6 +22,26 @@ let t_parse name prog expected =
 let t_interpret name prog expected =
   t_any name expected (prog |> parse_string (name ^ ".mml") |> interpret |> string_of_value) ~printer:(fun s -> s)
 
+
+let contains s1 s2 =
+    let re = Str.regexp_string s2 in
+    try 
+       ignore (Str.search_forward re s1 0); 
+       true
+    with Not_found -> false
+
+let t_error name prog substring =
+  let value = prog |> parse_string (name ^ ".mml") |> interpret in
+  let value_string = string_of_value value in
+  name>::(fun _ -> 
+    match value with
+      | VErr(_) ->
+          if contains value_string substring
+          then assert_string ""
+          else assert_equal substring value_string ~printer:(fun s -> s)
+      | _ -> assert_failure (Printf.sprintf "no error found. got %s" value_string))
+
+
 let suite = "suite">:::[
     t_any "test" 2 (1+1);
     t_any_err "test-error" (fun () -> failwith "rip") (Failure("rip"));
@@ -42,6 +62,14 @@ let interpret_tests = "interpret_tests">:::[
   t_interpret "-100" "-100" "-100";
   t_interpret "true" "true" "true";
   t_interpret "false" "false" "false";
+  t_interpret "add" "1 + 1" "2";
+  t_interpret "or-f-f" "false || false" "false";
+  t_interpret "or-f-t" "false || true" "true";
+  t_interpret "or-t-f" "true || false" "true";
+  t_interpret "or-t-t" "true || true" "true";
+  t_error "1plustrue" "1 + true" "type";
+  t_error "inner_error" "(1 + true) + 2" "type";
+  t_error "1" "1 / 0" "divide by zero";
 ]
 
 let () = 
@@ -51,5 +79,3 @@ let () =
     parse_tests;
     interpret_tests;
   ]
-
-let e = (~-)

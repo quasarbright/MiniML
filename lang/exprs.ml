@@ -37,3 +37,11 @@ let untag (p : 'a program) =
   in
   let e, tag = p in
     (helpE e, ())
+
+
+let get_tag (e : 'a expr) =
+  match e with
+    | EInt(_, tag) -> tag
+    | EBool(_, tag) -> tag
+    | EPrim1(_, _, tag) -> tag
+    | EPrim2(_,_,_,tag) -> tag
