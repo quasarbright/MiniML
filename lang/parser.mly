@@ -48,7 +48,7 @@ expr:
   | expr DIVIDE expr { EPrim2(Divide, $1, $3, full_span()) }
   | expr TIMES expr { EPrim2(Times, $1, $3, full_span()) }
   | NOT expr { EPrim1(Not, $2, full_span()) }
-  | UNEGATE expr { EPrim1(Not, $2, full_span()) }
+  | UNEGATE expr { EPrim1(UNegate, $2, full_span()) }
   | LPAREN expr RPAREN %prec GROUP { $2 }
 
 program:

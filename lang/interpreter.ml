@@ -2,6 +2,7 @@ open Exprs
 open Pretty
 open Errors
 open Values
+open Builtins
 
 
 let interpreter_failure_handler (evaluator : 'a expr -> 'a value) (on_err : exn -> 'a expr list -> 'a -> 'a value) (e : 'a expr) (on_success : 'a value -> 'b) =
@@ -10,10 +11,10 @@ let interpreter_failure_handler (evaluator : 'a expr -> 'a value) (on_err : exn 
     | VErr(exn, exprs, tag) -> on_err exn exprs tag
     | _ -> on_success value
 
-let add_to_trace e err =
-  match err with
+let add_to_trace_if_err e v =
+  match v with
     | VErr(exn, exprs, tag) -> VErr(exn, e::exprs, tag)
-    | _ -> failwith "add_to_trace expects error values only"
+    | _ -> v
 
 let interpret (p : sourcespan program) : sourcespan value =
   let rec helpE e =
@@ -22,21 +23,14 @@ let interpret (p : sourcespan program) : sourcespan value =
     match e with
       | EInt(num, tag) -> VInt(num, tag)
       | EBool(b, tag) -> VBool(b, tag)
-      | EPrim2(Plus, left_expr, right_expr, tag) ->
-          left_expr >>= (fun left ->
-          right_expr >>= (fun right -> 
-            match left, right with
-              | VInt(left_num, _), VInt(right_num, _) -> VInt(Int64.add left_num right_num, tag)
-              | _ -> VErr(Failure("type error"), [e], tag)
-          )) 
-      | EPrim2(Or, left_expr, right_expr, tag) ->
+      | EPrim1(prim1, arg_expr, tag) ->
+          arg_expr >>= fn_of_prim1 prim1 tag
+          |> add_to_trace_if_err e
+      | EPrim2(prim2, left_expr, right_expr, tag) ->
           left_expr >>= (fun left ->
           right_expr >>= (fun right ->
-            match left, right with
-              | VBool(left_b, _), VBool(right_b, _) -> VBool(left_b || right_b, tag)
-              | _ -> VErr(Failure("type error"), [e], tag)
-          ))
-      | EPrim1(_,_,tag) | EPrim2(_,_,_,tag) -> VErr(Failure("not yet implemented"), [e], tag)
+          fn_of_prim2 prim2 tag left right))
+          |> add_to_trace_if_err e
   in
   let (e, tag) = p in
   helpE e

@@ -55,9 +55,12 @@ let parse_tests = "parse_tests">:::[
   t_parse "true" "true" ((EBool(true, ())), ());
   t_parse "false" "false" ((EBool(false, ())), ());
   t_parse "comment" "1 (* comment *)" ((EInt(1L, ())), ());
+  t_parse "neg-paren" "~-(1)" ((EPrim1(UNegate, EInt(1L, ()), ()), ()));
+  t_parse "add-left-assoc" "1 + 2 + 3" ((EPrim2(Plus, EPrim2(Plus, EInt(1L, ()), EInt(2L, ()), ()), EInt(3L, ()), ()), ()));
+  t_parse "unegate-int" "~-1" ((EPrim1(UNegate, EInt(1L, ()), ()), ()));
 ]
 
-let interpret_tests = "interpret_tests">:::[
+let integration_tests = "integration_tests">:::[
   t_interpret "69" "69" "69";
   t_interpret "-100" "-100" "-100";
   t_interpret "true" "true" "true";
@@ -67,6 +70,11 @@ let interpret_tests = "interpret_tests">:::[
   t_interpret "or-f-t" "false || true" "true";
   t_interpret "or-t-f" "true || false" "true";
   t_interpret "or-t-t" "true || true" "true";
+  t_interpret "and-f-f" "false && false" "false";
+  t_interpret "and-f-t" "false && true" "false";
+  t_interpret "and-t-f" "true && false" "false";
+  t_interpret "and-t-t" "true && true" "true";
+  t_interpret "minus" "1 - 2" "-1";
   t_error "1plustrue" "1 + true" "type";
   t_error "inner_error" "(1 + true) + 2" "type";
   t_error "1" "1 / 0" "divide by zero";
@@ -77,5 +85,5 @@ let () =
   [
     suite;
     parse_tests;
-    interpret_tests;
+    integration_tests;
   ]
