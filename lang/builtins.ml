@@ -14,9 +14,11 @@ let assert_typ v expected_type on_err on_ok =
   let tag = tag_of_value v in
   let actual_type = type_of_value v in
   if untag_type actual_type = untag_type expected_type
-  then on_ok()
+  then on_ok v
   else on_err (TypeMismatch(expected_type, actual_type, tag))
 
+
+(* NOT ACTUALLY A MONAD *)
 let (>>=) (v, expected_type) on_ok =
   let tag = tag_of_value v in
   assert_typ v expected_type
@@ -24,24 +26,27 @@ let (>>=) (v, expected_type) on_ok =
     on_ok
 
 let wrap_int_binop binop tag left right =
-    (left, TyInt(ds)) >>= (fun () ->
-    (right, TyInt(ds)) >>= (fun () ->
+    (left, TyInt(ds)) >>= (fun _ ->
+    (right, TyInt(ds)) >>= (fun _ ->
         match left, right with
     | VInt(left_num, _), VInt(right_num, _) -> VInt(binop left_num right_num, tag)
     | _ -> raise (InternalError("unexpected type error in wrap_int_binop"))))
 
 let wrap_cmp binop tag left right =
+
   match left, right with
     | VInt(l, _), VInt(r, _) -> VBool(l < r, tag)
     | VBool(l, _), VBool(r, _) -> VBool(l < r, tag)
-    | VInt(_), VBool(_) | VBool(_), VInt _ -> type_err_behavior tag
-    | VErr(_), _ | _, VErr(_) -> failwith "unexpected error value in fn_of_prim2"
+    | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
+    | VErr(_), _ | _, VErr(_) -> raise (InternalError("unexpected type error in wrap_cmp"))
 
 
 let wrap_bool_binop binop tag left right =
-  match left, right with
+  (left, TyBool(ds)) >>= (fun _ ->
+  (right, TyBool(ds)) >>= (fun _ ->
+    match left, right with
     | VBool(left_b, _), VBool(right_b, _) -> VBool(binop left_b right_b, tag)
-    | _ -> type_err_behavior tag
+    | _ -> raise (InternalError("unexpected type error in wrap_bool_binop"))))
 
 let fn_of_prim2 = function
   | Plus -> wrap_int_binop Int64.add
@@ -49,16 +54,22 @@ let fn_of_prim2 = function
   | Times -> wrap_int_binop Int64.mul
   | Modulo ->
       (fun tag left right ->
-        match left, right with
-          | VInt(left_num, _), VInt(0L, _) -> VErr(DivideByZero(tag), [], tag)
-          | VInt(left_num, _), VInt(right_num, _) -> VInt(Int64.rem left_num right_num, tag)
-          | _ -> type_err_behavior tag)
+        (left, TyInt(ds)) >>= (fun _ -> 
+        (right, TyInt(ds)) >>= (fun _ ->
+          match left, right with
+            | VInt(left_num, _), VInt(0L, _) -> VErr(DivideByZero(tag), [], tag)
+            | VInt(left_num, _), VInt(right_num, _) -> VInt(Int64.rem left_num right_num, tag)
+            | _ -> raise (InternalError("unexpected type error in modulo")))
+        ))
   | Divide ->
       (fun tag left right ->
-        match left, right with
-          | VInt(left_num, _), VInt(0L, _) -> VErr(DivideByZero(tag), [], tag)
-          | VInt(left_num, _), VInt(right_num, _) -> VInt(Int64.div left_num right_num, tag)
-          | _ -> type_err_behavior tag)
+        (left, TyInt(ds)) >>= (fun _ -> 
+        (right, TyInt(ds)) >>= (fun _ ->
+          match left, right with
+            | VInt(left_num, _), VInt(0L, _) -> VErr(DivideByZero(tag), [], tag)
+            | VInt(left_num, _), VInt(right_num, _) -> VInt(Int64.div left_num right_num, tag)
+            | _ -> raise (InternalError("unexpected type error in divide")))
+        ))
   | Less -> wrap_cmp (<)
   | LessEq -> wrap_cmp (<=)
   | Greater -> wrap_cmp (>)
