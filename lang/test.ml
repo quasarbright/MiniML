@@ -77,7 +77,7 @@ let integration_tests = "integration_tests">:::[
   t_interpret "minus" "1 - 2" "-1";
   t_error "1plustrue" "1 + true" "type";
   t_error "inner_error" "(1 + true) + 2" "type";
-  t_error "1" "1 / 0" "divide by zero";
+  t_error "1" "1 / 0" "Divide by zero";
 ]
 
 let () = 

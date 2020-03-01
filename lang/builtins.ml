@@ -1,13 +1,34 @@
 open Exprs
 open Values
 open Errors
+open Types
+
+let ds : sourcespan = Lexing.dummy_pos, Lexing.dummy_pos
 
 let type_err_behavior tag = VErr(Failure("type error"), [], tag)
 
+let type_mismatch tag expected_type v =
+  TypeMismatch(expected_type, type_of_value v, tag)
+
+let assert_typ v expected_type on_err on_ok =
+  let tag = tag_of_value v in
+  let actual_type = type_of_value v in
+  if untag_type actual_type = untag_type expected_type
+  then on_ok()
+  else on_err (TypeMismatch(expected_type, actual_type, tag))
+
+let (>>=) (v, expected_type) on_ok =
+  let tag = tag_of_value v in
+  assert_typ v expected_type
+    (fun exn -> VErr(exn, [], tag))
+    on_ok
+
 let wrap_int_binop binop tag left right =
-  match left, right with
+    (left, TyInt(ds)) >>= (fun () ->
+    (right, TyInt(ds)) >>= (fun () ->
+        match left, right with
     | VInt(left_num, _), VInt(right_num, _) -> VInt(binop left_num right_num, tag)
-    | _ -> type_err_behavior tag
+    | _ -> raise (InternalError("unexpected type error in wrap_int_binop"))))
 
 let wrap_cmp binop tag left right =
   match left, right with

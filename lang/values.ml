@@ -1,4 +1,5 @@
 open Exprs
+open Types
 
 type 'a value =
   | VInt of int64 * 'a
@@ -14,3 +15,13 @@ let map_value_tag f v =
 
 (* for some reason, removing the v causes a compile error *)
 let untag_value v = map_value_tag ignore v
+
+let tag_of_value = function
+  | VInt(_, tag) -> tag
+  | VBool(_, tag) -> tag
+  | VErr(_,_,tag) -> tag
+
+let type_of_value = function
+  | VInt(_, tag) -> TyInt(tag)
+  | VBool(_, tag) -> TyBool(tag)
+  | VErr(_,_,tag) -> TyBottom(tag)

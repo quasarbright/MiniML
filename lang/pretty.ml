@@ -4,6 +4,7 @@ open Printf
 open Format
 open Lexing
 open Types
+open Errors
 
 let string_of_prim1 p1 =
   match p1 with
@@ -45,13 +46,27 @@ let string_of_sourcespan ((pstart, pend) : sourcespan) : string =
   sprintf "%s, %d:%d-%d:%d" pstart.pos_fname pstart.pos_lnum (pstart.pos_cnum - pstart.pos_bol)
           pend.pos_lnum (pend.pos_cnum - pend.pos_bol)
 
+let string_of_typ = function
+  | TyInt _ -> "int"
+  | TyBool _ -> "bool"
+  | TyBottom _ -> "<bottom>"
+  | TyTop _ -> "<top>"
+  | TyVar(name, _) -> name 
+
+let string_of_error = function
+  | DivideByZero(pos) -> sprintf "Divide by zero at %s" (string_of_sourcespan pos)
+  | TypeMismatch(expected, actual, pos) ->
+      sprintf "Type error at %s: expected %s, but got %s" (string_of_sourcespan pos) (string_of_typ expected) (string_of_typ actual)
+  | InternalError(msg) -> sprintf "Internal error: %s" msg
+  | err -> Printexc.to_string err
+
 let ( >> ) f g x = g (f x)
 let string_of_value v =
   match v with
     | VInt(num, _) -> Int64.to_string num
     | VBool(b, _) -> Bool.to_string b
     | VErr(exn, exprs, tag) ->
-        let exn_str = Printexc.to_string exn in
+        let exn_str = string_of_error exn in
         let traceback_strs = exprs |> List.map (get_tag >> string_of_sourcespan) in
         let traceback_str = String.concat "\n" traceback_strs in
         (* let loc_str = string_of_sourcespan tag in *)
