@@ -61,3 +61,10 @@ let parse_string (name : string) (s : string) : sourcespan program =
 let parse_file (name : string) input_file : sourcespan program = 
   let lexbuf = Lexing.from_channel input_file in
   parse name lexbuf
+
+
+let run_file runner filename =
+  filename
+    |> string_of_file
+    |> parse_string filename
+    |> runner

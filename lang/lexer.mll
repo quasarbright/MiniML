@@ -7,7 +7,7 @@
 let dec_digit = ['0'-'9']
 let signed_int = dec_digit+ | ('-' dec_digit+)
 
-let ident = ['a'-'z' 'A'-'Z' '_']['a'-'z' 'A'-'Z' '0'-'9' '_']*
+let ident = ['a'-'z' 'A'-'Z' '_']['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 
 let blank = [' ' '\t']+
 
@@ -37,6 +37,12 @@ rule token = parse
   | "&&" { AND }
   | "true" { TRUE }
   | "false" { FALSE }
+  | "let" { LET }
+  | "in" { IN }
+  | "if" { IF }
+  | "then" { THEN }
+  | "else" { ELSE }
+  | ident as name { IDENT (name) }
   | eof { EOF }
   | _ as c { failwith (sprintf "Unrecognized character: %c" c) }
 

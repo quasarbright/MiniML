@@ -31,8 +31,19 @@ let rec string_of_expr e =
   match e with
     | EInt(num, _) -> Int64.to_string num
     | EBool(b, _) -> Bool.to_string b
-    | EPrim1(prim1, arg_expr, _) -> sprintf "(%s(%s))" (string_of_prim1 prim1) (string_of_expr arg_expr)
-    | EPrim2(prim2, left_expr, right_expr, _) -> sprintf "((%s) %s (%s))" (string_of_expr left_expr) (string_of_prim2 prim2) (string_of_expr right_expr)
+    | EId(name, _) -> name
+    | EPrim1(prim1, arg_expr, _) -> sprintf "(%s%s)" (string_of_prim1 prim1) (string_of_expr arg_expr)
+    | EPrim2(prim2, left_expr, right_expr, _) -> sprintf "(%s %s %s)" (string_of_expr left_expr) (string_of_prim2 prim2) (string_of_expr right_expr)
+    | EIf(cnd,thn,els,_) ->
+        sprintf "(if %s then %s else %s)"
+          (string_of_expr cnd)
+          (string_of_expr thn)
+          (string_of_expr els)
+    | ELet((name, val_expr, _), body_expr, _) ->
+        sprintf "(let %s = %s in %s)"
+          name
+          (string_of_expr val_expr)
+          (string_of_expr body_expr)
 
 let string_of_program (p : 'a program) =
   let (e, tag) = p in
@@ -53,11 +64,15 @@ let string_of_typ = function
   | TyTop _ -> "<top>"
   | TyVar(name, _) -> name 
 
+
+let indent_line s = sprintf "\t%s" s
+
 let string_of_error = function
   | DivideByZero(pos) -> sprintf "Divide by zero at %s" (string_of_sourcespan pos)
   | TypeMismatch(expected, actual, pos) ->
       sprintf "Type error at %s: expected %s, but got %s" (string_of_sourcespan pos) (string_of_typ expected) (string_of_typ actual)
   | InternalError(msg) -> sprintf "Internal error: %s" msg
+  | UnboundId(name, pos) -> sprintf "the name %s is not in scope at %s" name (string_of_sourcespan pos)
   | err -> Printexc.to_string err
 
 let ( >> ) f g x = g (f x)
@@ -67,7 +82,11 @@ let string_of_value v =
     | VBool(b, _) -> Bool.to_string b
     | VErr(exn, exprs, tag) ->
         let exn_str = string_of_error exn in
-        let traceback_strs = exprs |> List.map (get_tag >> string_of_sourcespan) in
+        let traceback_strs = 
+          exprs
+          |> List.map
+             (fun e -> sprintf "%s\n\t%s" (string_of_sourcespan (get_tag e)) (string_of_expr e))
+        in
         let traceback_str = String.concat "\n" traceback_strs in
         (* let loc_str = string_of_sourcespan tag in *)
         Printf.sprintf "Traceback (most recent call last):\n\n%s\n\n%s" traceback_str exn_str

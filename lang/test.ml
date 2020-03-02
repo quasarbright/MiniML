@@ -58,6 +58,19 @@ let parse_tests = "parse_tests">:::[
   t_parse "neg-paren" "~-(1)" ((EPrim1(UNegate, EInt(1L, ()), ()), ()));
   t_parse "add-left-assoc" "1 + 2 + 3" ((EPrim2(Plus, EPrim2(Plus, EInt(1L, ()), EInt(2L, ()), ()), EInt(3L, ()), ()), ()));
   t_parse "unegate-int" "~-1" ((EPrim1(UNegate, EInt(1L, ()), ()), ()));
+  t_parse "let" "let x = 1 in x" ((ELet(("x", EInt(1L, ()), ()), EId("x", ()), ()), ()));
+  t_parse "if" "if true then 1 else 0" ((EIf(EBool(true, ()), EInt(1L, ()), EInt(0L, ()), ()), ()));
+  t_parse "let-seq" "let x = 1 in let y = 2 in 3" ((ELet(("x", EInt(1L, ()), ()), ELet(("y", EInt(2L, ()), ()), EInt(3L, ()), ()), ()), ()));
+  t_parse "let-in-let" "let x = let y = 1 in y in x"
+      (ELet(
+        (
+          "x",
+          ELet(("y", EInt(1L, ()), ()), EId("y", ()), ()),
+          ()
+        ),
+        EId("x", ()),
+        ()
+      ), ());
 ]
 
 let integration_tests = "integration_tests">:::[
@@ -75,9 +88,16 @@ let integration_tests = "integration_tests">:::[
   t_interpret "and-t-f" "true && false" "false";
   t_interpret "and-t-t" "true && true" "true";
   t_interpret "minus" "1 - 2" "-1";
-  t_error "1plustrue" "1 + true" "Type error";
-  t_error "inner_error" "(1 + true) + 2" "Type error";
+  t_interpret "let" "let x = 1 in x" "1";
+  t_interpret "shadow" "let x = 1 in let x = 2 in x" "2";
+  t_interpret "scoping" "let x = (let x = 2 in 1) in x" "1";
+  t_interpret "if" "if true then 1 else 0" "1";
+  t_error "1plustrue" "1 + true" "expected int, but got bool";
+  t_error "inner_error" "(1 + true) + 2" "expected int, but got bool";
   t_error "1" "1 / 0" "Divide by zero";
+  t_error "unbound" "x" "x is not in scope";
+  t_error "use-in-def" "let x = x in 1" "x is not in scope";
+  t_error "if-not-bool" "if 1 then 1 else 0" "expected bool, but got int";
 ]
 
 let () = 

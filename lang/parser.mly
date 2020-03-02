@@ -6,8 +6,13 @@ let tok_span(start, endtok) = (Parsing.rhs_start_pos start, Parsing.rhs_end_pos 
 %}
 
 %token <int64> INT
-%token TRUE FALSE LPAREN RPAREN AND OR NOT EQ NEQ LT GT LTE GTE PLUS MINUS UNEGATE TIMES DIVIDE MODULO EOF
+%token <string> IDENT
+%token TRUE FALSE LPAREN RPAREN AND OR NOT EQ NEQ LT GT LTE GTE PLUS MINUS UNEGATE TIMES DIVIDE MODULO EOF LET IN IF THEN ELSE
 
+%left ASSIGN
+%nonassoc LET REC IN
+%left CONDITIONAL
+%nonassoc IF THEN ELSE
 %left OR
 %left AND
 %left EQ NEQ
@@ -19,7 +24,7 @@ let tok_span(start, endtok) = (Parsing.rhs_start_pos start, Parsing.rhs_end_pos 
 %nonassoc GROUP
 %nonassoc LPAREN RPAREN
 %nonassoc ATOM
-%nonassoc TRUE FALSE INT
+%nonassoc TRUE FALSE INT ID
 %nonassoc EOF
 
 %type <(Lexing.position * Lexing.position) Exprs.program> program
@@ -30,10 +35,28 @@ let tok_span(start, endtok) = (Parsing.rhs_start_pos start, Parsing.rhs_end_pos 
 
 %%
 
-expr:
+const :
   | INT { EInt($1, full_span()) }
   | TRUE { EBool(true, full_span()) }
   | FALSE { EBool(false, full_span()) }
+
+atom :
+  | IDENT { EId($1, full_span()) }
+  | const { $1 }
+
+bind :
+  | IDENT EQ expr { ($1, $3, full_span()) }
+
+let_bind :
+  | LET bind IN expr { ELet($2, $4, full_span()) }
+
+conditional :
+  | IF expr THEN expr ELSE expr { EIf($2, $4, $6, full_span()) }
+
+expr:
+  | atom %prec ATOM { $1 }
+  | let_bind %prec ASSIGN { $1 }
+  | conditional %prec CONDITIONAL { $1 }
   | expr OR expr { EPrim2(Or, $1, $3, full_span()) }
   | expr AND expr { EPrim2(And, $1, $3, full_span()) }
   | expr EQ expr { EPrim2(Eq, $1, $3, full_span()) }
