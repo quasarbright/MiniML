@@ -1,8 +1,11 @@
 %{
 open Exprs
 
-let full_span() = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())
-let tok_span(start, endtok) = (Parsing.rhs_start_pos start, Parsing.rhs_end_pos endtok)
+let full_span () = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())
+let tok_span (start, endtok) = (Parsing.rhs_start_pos start, Parsing.rhs_end_pos endtok)
+(* let app_combine es =
+  List.fold_left
+    (fun app e -> EApp *)
 %}
 
 %token <int64> INT
@@ -80,7 +83,13 @@ expr:
   | expr TIMES expr { EPrim2(Times, $1, $3, full_span()) }
   | NOT expr { EPrim1(Not, $2, full_span()) }
   | UNEGATE expr { EPrim1(UNegate, $2, full_span()) }
+  | app %prec APPLY { $1 }
   | LPAREN expr RPAREN %prec GROUP { $2 }
+
+
+app :
+  | app expr %prec APPLY { EApp($1, $2, full_span()) }
+  | expr { $1 }
 
 program:
   expr EOF { ($1, full_span()) }

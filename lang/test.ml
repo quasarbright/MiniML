@@ -81,6 +81,17 @@ let parse_tests = "parse_tests">:::[
       EInt(2L, ()),
       ()
     ), ());
+  t_parse "app" "f a"
+    (EApp(EId("f", ()), EId("a", ()), ()), ());
+  t_parse "app-many" "f a b c"
+    (EApp(EApp(EApp(EId("f", ()), EId("a", ()), ()), EId("b", ()), ()), EId("c", ()), ()), ());
+  t_parse "app-with-prim2" "f a b + g c d"
+    (EPrim2(
+      Plus,
+      (EApp(EApp(EId("f", ()), EId("a", ()), ()), EId("b", ()), ())),
+      (EApp(EApp(EId("g", ()), EId("c", ()), ()), EId("d", ()), ())),
+      ()
+      ), ());
 ]
 
 let integration_tests = "integration_tests">:::[

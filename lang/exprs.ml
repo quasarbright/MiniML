@@ -27,6 +27,7 @@ type 'a expr =
   | EPrim2 of prim2 * 'a expr * 'a expr * 'a
   | EIf of 'a expr * 'a expr * 'a expr * 'a
   | ELet of 'a bind * 'a expr * 'a
+  | EApp of 'a expr * 'a expr * 'a
 and 'a bind = (string * 'a) list * 'a expr * 'a
 
 type 'a program = 'a expr * 'a
@@ -42,6 +43,7 @@ let rec map_expr_tag f e =
     | EPrim2(prim2, left_expr, right_expr, tag) -> EPrim2(prim2, map_expr_tag f left_expr, map_expr_tag f right_expr, f tag)
     | EIf(cnd,thn,els,tag) -> EIf(map_expr_tag f cnd,map_expr_tag f thn,map_expr_tag f els, f tag)
     | ELet((names, val_expr, bind_tag), body_expr, tag) -> ELet((List.map (helpB f) names, map_expr_tag f val_expr, f bind_tag), map_expr_tag f body_expr, f tag)
+    | EApp(func_expr, arg_expr, tag) -> EApp(map_expr_tag f func_expr, map_expr_tag f arg_expr, f tag)
 
 let map_program_tag f (p : 'a program) =
   let e, tag = p in
@@ -59,3 +61,4 @@ let get_tag (e : 'a expr) =
     | EPrim2(_,_,_,tag) -> tag
     | EIf(_,_,_,tag) -> tag
     | ELet(_,_,tag) -> tag
+    | EApp(_,_,tag) -> tag

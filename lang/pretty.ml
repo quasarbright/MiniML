@@ -44,6 +44,7 @@ let rec string_of_expr e =
           (names |> List.map fst |> String.concat " ")
           (string_of_expr val_expr)
           (string_of_expr body_expr)
+    | EApp(func_expr, arg_expr, _) -> sprintf "(%s $ %s)" (string_of_expr func_expr) ( string_of_expr arg_expr)
 
 let string_of_program (p : 'a program) =
   let (e, tag) = p in
