@@ -71,13 +71,14 @@ let string_of_error = function
   | DivideByZero(pos) -> sprintf "Divide by zero at %s" (string_of_sourcespan pos)
   | TypeMismatch(expected, actual, pos) ->
       sprintf "Type error at %s: expected %s, but got %s" (string_of_sourcespan pos) (string_of_typ expected) (string_of_typ actual)
+  | ArgumentError(msg, pos) -> sprintf "Argument error at %s: %s" (string_of_sourcespan pos) msg
   | InternalError(msg) -> sprintf "Internal error: %s" msg
   | UnboundId(name, pos) -> sprintf "the name %s is not in scope at %s" name (string_of_sourcespan pos)
   | err -> Printexc.to_string err
 
 let ( >> ) f g x = g (f x)
 let string_of_value v =
-  let rec helpF (Func(maybe_name, arg_name, body, tag)) =
+  let rec helpF (Func(maybe_name, arg_name, body, env, tag)) =
     let string_of_body =
       match body with
         | Left(fv) -> helpF fv

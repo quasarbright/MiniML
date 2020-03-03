@@ -39,6 +39,7 @@ let wrap_cmp binop tag left right =
     | VBool(l, _), VBool(r, _) -> VBool(l < r, tag)
     | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
     | VErr(_), _ | _, VErr(_) -> raise (InternalError("unexpected type error in wrap_cmp"))
+    | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag)
 
 
 let wrap_bool_binop binop tag left right =

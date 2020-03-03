@@ -58,19 +58,29 @@ let parse_tests = "parse_tests">:::[
   t_parse "neg-paren" "~-(1)" ((EPrim1(UNegate, EInt(1L, ()), ()), ()));
   t_parse "add-left-assoc" "1 + 2 + 3" ((EPrim2(Plus, EPrim2(Plus, EInt(1L, ()), EInt(2L, ()), ()), EInt(3L, ()), ()), ()));
   t_parse "unegate-int" "~-1" ((EPrim1(UNegate, EInt(1L, ()), ()), ()));
-  t_parse "let" "let x = 1 in x" ((ELet(("x", EInt(1L, ()), ()), EId("x", ()), ()), ()));
+  t_parse "let" "let x = 1 in x" ((ELet(([("x", ())], EInt(1L, ()), ()), EId("x", ()), ()), ()));
   t_parse "if" "if true then 1 else 0" ((EIf(EBool(true, ()), EInt(1L, ()), EInt(0L, ()), ()), ()));
-  t_parse "let-seq" "let x = 1 in let y = 2 in 3" ((ELet(("x", EInt(1L, ()), ()), ELet(("y", EInt(2L, ()), ()), EInt(3L, ()), ()), ()), ()));
+  t_parse "let-seq" "let x = 1 in let y = 2 in 3" ((ELet(([("x",())], EInt(1L, ()), ()), ELet(([("y", ())], EInt(2L, ()), ()), EInt(3L, ()), ()), ()), ()));
   t_parse "let-in-let" "let x = let y = 1 in y in x"
       (ELet(
         (
-          "x",
-          ELet(("y", EInt(1L, ()), ()), EId("y", ()), ()),
+          [("x", ())],
+          ELet(([("y", ())], EInt(1L, ()), ()), EId("y", ()), ()),
           ()
         ),
         EId("x", ()),
         ()
       ), ());
+  t_parse "func-def" "let f a b = 1 in 2"
+    (ELet(
+      (
+        [("f", ());("a", ());("b", ())],
+        EInt(1L, ()),
+        ()
+      ),
+      EInt(2L, ()),
+      ()
+    ), ());
 ]
 
 let integration_tests = "integration_tests">:::[

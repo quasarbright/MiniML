@@ -8,7 +8,7 @@ type 'a value =
   | VBool of bool * 'a
   | VFunc of 'a functionValue
   | VErr of exn * 'a expr list * 'a (* exception, "call stack" most recent call last, tag *)
-and 'a functionValue = Func of string option * string * ('a functionValue, 'a expr) either * 'a (* maybe name, argname, body, tag *)
+and 'a functionValue = Func of string option * string * ('a functionValue, 'a expr) either * (string * 'a value) list * 'a (* maybe name, argname, body, environment, tag *)
 
 let map_value_tag f v =
   let rec helpV f v =
@@ -17,14 +17,19 @@ let map_value_tag f v =
       | VBool(b, tag) -> VBool(b, f tag)
       | VFunc(fv) -> VFunc(helpF f fv)
       | VErr(exn, exprs, tag) -> VErr(exn, exprs, f tag)
-  and helpF f (Func(maybe_name, arg_name, body, tag)) =
+  and helpF f (Func(maybe_name, arg_name, body, env, tag)) =
     let tag' = f tag in
     let body' =
       match body with
         | Left(fv) -> Left(helpF f fv)
-        | Right(e) -> Right(e)
+        | Right(e) -> Right(map_expr_tag f e)
     in
-    Func(maybe_name, arg_name, body', tag')
+    let env' =
+      env
+      |> List.map
+         (fun (name, value) -> (name, helpV f value))
+    in
+    Func(maybe_name, arg_name, body', env', tag')
   in helpV f v
 
 (* for some reason, removing the v causes a compile error *)
@@ -37,7 +42,7 @@ let tag_of_value v =
     | VFunc(fv) -> helpF fv
     | VErr(_,_,tag) -> tag
   and helpF = function
-    Func(_,_,_,tag) -> tag
+    Func(_,_,_,_,tag) -> tag
   in
   helpV v
 

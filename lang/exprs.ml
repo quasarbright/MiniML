@@ -31,20 +31,23 @@ and 'a bind = (string * 'a) list * 'a expr * 'a
 
 type 'a program = 'a expr * 'a
 
-let untag (p : 'a program) =
-  let rec helpE e =
-    match e with
-      | EInt(num, _) -> EInt(num, ())
-      | EBool(b, _) -> EBool(b, ())
-      | EId(name, _) -> EId(name, ())
-      | EPrim1(prim1, arg_expr, _) -> EPrim1(prim1, helpE arg_expr, ())
-      | EPrim2(prim2, left_expr, right_expr, _) -> EPrim2(prim2, helpE left_expr, helpE right_expr, ())
-      | EIf(cnd,thn,els,_) -> EIf(helpE cnd,helpE thn,helpE els,())
-      | ELet((names, val_expr, _), body_expr, _) -> ELet((List.map helpB names, helpE val_expr, ()), helpE body_expr, ())
-  and helpB (name, tag) = (name, ())
-  in
+
+let rec map_expr_tag f e =
+  let helpB f (name, tag) = (name, f tag) in
+  match e with
+    | EInt(num, tag) -> EInt(num, f tag)
+    | EBool(b, tag) -> EBool(b, f tag)
+    | EId(name, tag) -> EId(name, f tag)
+    | EPrim1(prim1, arg_expr, tag) -> EPrim1(prim1, map_expr_tag f arg_expr, f tag)
+    | EPrim2(prim2, left_expr, right_expr, tag) -> EPrim2(prim2, map_expr_tag f left_expr, map_expr_tag f right_expr, f tag)
+    | EIf(cnd,thn,els,tag) -> EIf(map_expr_tag f cnd,map_expr_tag f thn,map_expr_tag f els, f tag)
+    | ELet((names, val_expr, bind_tag), body_expr, tag) -> ELet((List.map (helpB f) names, map_expr_tag f val_expr, f bind_tag), map_expr_tag f body_expr, f tag)
+
+let map_program_tag f (p : 'a program) =
   let e, tag = p in
-    (helpE e, ())
+    (map_expr_tag f e, f tag)
+
+let untag (p : 'a program) : unit program = map_program_tag ignore p
 
 
 let get_tag (e : 'a expr) =
