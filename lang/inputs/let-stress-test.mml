@@ -1,0 +1,5 @@
+let a = 1 in
+let b = let c = 2 in c + 3 in
+let d = 4 in
+let sum = a + b + d in
+sum + 5
