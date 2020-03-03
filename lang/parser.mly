@@ -83,7 +83,7 @@ expr:
   | expr TIMES expr { EPrim2(Times, $1, $3, full_span()) }
   | NOT expr { EPrim1(Not, $2, full_span()) }
   | UNEGATE expr { EPrim1(UNegate, $2, full_span()) }
-  | app %prec APPLY { $1 }
+  | app { $1 }
   | LPAREN expr RPAREN %prec GROUP { $2 }
 
 
