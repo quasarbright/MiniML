@@ -27,7 +27,7 @@ type 'a expr =
   | EPrim2 of prim2 * 'a expr * 'a expr * 'a
   | EIf of 'a expr * 'a expr * 'a expr * 'a
   | ELet of 'a bind * 'a expr * 'a
-and 'a bind = string * 'a expr * 'a
+and 'a bind = (string * 'a) list * 'a expr * 'a
 
 type 'a program = 'a expr * 'a
 
@@ -40,7 +40,8 @@ let untag (p : 'a program) =
       | EPrim1(prim1, arg_expr, _) -> EPrim1(prim1, helpE arg_expr, ())
       | EPrim2(prim2, left_expr, right_expr, _) -> EPrim2(prim2, helpE left_expr, helpE right_expr, ())
       | EIf(cnd,thn,els,_) -> EIf(helpE cnd,helpE thn,helpE els,())
-      | ELet((name, val_expr, _), body_expr, _) -> ELet((name, helpE val_expr, ()), helpE body_expr, ())
+      | ELet((names, val_expr, _), body_expr, _) -> ELet((List.map helpB names, helpE val_expr, ()), helpE body_expr, ())
+  and helpB (name, tag) = (name, ())
   in
   let e, tag = p in
     (helpE e, ())

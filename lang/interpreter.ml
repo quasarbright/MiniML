@@ -50,13 +50,24 @@ let interpret (p : sourcespan program) : sourcespan value =
                     then helpE env thn
                     else helpE env els
                 | _ -> failwith "unexpected type error in EIf interpreting"))
-      | ELet((name, val_expr, bind_tag), body_expr, tag) ->
-          val_expr >>=
-          (fun value ->
-            let env' = (name, value)::env in
-            let (>>=) = failure_bind env' in
-              body_expr >>= (fun body -> body)
-          )
+      | ELet((names, val_expr, bind_tag), body_expr, tag) ->
+          match names with
+          | [(name, _)] ->
+              val_expr >>=
+              (fun value ->
+                let env' = (name, value)::env in
+                let (>>=) = failure_bind env' in
+                  body_expr >>= (fun body -> body)
+              )
+          | (name, _)::(arg_name::arg_names) ->
+              let arg_name' = fst arg_name in
+              let arg_names' = List.map fst arg_names in
+              VFunc(Func(Some(name), arg_name', helpF arg_names' val_expr tag, tag))
+          | [] -> raise (InternalError("encountered elet with no binds while interpreting"))
+  and helpF arg_names val_expr tag =
+    match arg_names with
+      | [] -> Right(val_expr)
+      | arg_name::arg_names' -> Left(Func(None, arg_name, helpF arg_names val_expr tag, tag))
   in
   let (e, tag) = p in
   helpE [] e

@@ -39,9 +39,9 @@ let rec string_of_expr e =
           (string_of_expr cnd)
           (string_of_expr thn)
           (string_of_expr els)
-    | ELet((name, val_expr, _), body_expr, _) ->
+    | ELet((names, val_expr, _), body_expr, _) ->
         sprintf "(let %s = %s in %s)"
-          name
+          (names |> List.map fst |> String.concat " ")
           (string_of_expr val_expr)
           (string_of_expr body_expr)
 
@@ -77,9 +77,23 @@ let string_of_error = function
 
 let ( >> ) f g x = g (f x)
 let string_of_value v =
+  let rec helpF (Func(maybe_name, arg_name, body, tag)) =
+    let string_of_body =
+      match body with
+        | Left(fv) -> helpF fv
+        | Right(e) -> string_of_expr e
+    in
+    let name_prefix =
+      match maybe_name with
+        | None -> ""
+        | Some(name) -> sprintf "%s: " name
+    in
+    sprintf "(%s%s -> %s)" name_prefix arg_name string_of_body
+  in
   match v with
     | VInt(num, _) -> Int64.to_string num
     | VBool(b, _) -> Bool.to_string b
+    | VFunc(fv) -> helpF fv
     | VErr(exn, exprs, tag) ->
         let exn_str = string_of_error exn in
         let traceback_strs = 

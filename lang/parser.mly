@@ -21,6 +21,7 @@ let tok_span(start, endtok) = (Parsing.rhs_start_pos start, Parsing.rhs_end_pos 
 %left MODULO DIVIDE TIMES
 %nonassoc NOT
 %nonassoc UNEGATE
+%left APPLY
 %nonassoc GROUP
 %nonassoc LPAREN RPAREN
 %nonassoc ATOM
@@ -44,8 +45,15 @@ atom :
   | IDENT { EId($1, full_span()) }
   | const { $1 }
 
+ident :
+  | IDENT { ($1, full_span()) }
+
+idents :
+  | ident { [$1] }
+  | ident idents { $1::$2 }
+
 bind :
-  | IDENT EQ expr { ($1, $3, full_span()) }
+  | idents EQ expr { ($1, $3, full_span()) }
 
 let_bind :
   | LET bind IN expr { ELet($2, $4, full_span()) }
