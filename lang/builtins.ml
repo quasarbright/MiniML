@@ -32,14 +32,13 @@ let wrap_int_binop binop tag left right =
     | VInt(left_num, _), VInt(right_num, _) -> VInt(binop left_num right_num, tag)
     | _ -> raise (InternalError("unexpected type error in wrap_int_binop"))))
 
-let wrap_cmp binop tag left right =
-
+(* let wrap_cmp binop tag left right =
   match left, right with
-    | VInt(l, _), VInt(r, _) -> VBool(l < r, tag)
-    | VBool(l, _), VBool(r, _) -> VBool(l < r, tag)
+    | VInt(l, _), VInt(r, _) -> VBool(binop l r, tag)
+    | VBool(l, _), VBool(r, _) -> VBool(binop l r, tag)
     | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
     | VErr(_), _ | _, VErr(_) -> raise (InternalError("unexpected type error in wrap_cmp"))
-    | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag)
+    | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag) *)
 
 
 let wrap_bool_binop binop tag left right =
@@ -71,12 +70,54 @@ let fn_of_prim2 = function
             | VInt(left_num, _), VInt(right_num, _) -> VInt(Int64.div left_num right_num, tag)
             | _ -> raise (InternalError("unexpected type error in divide")))
         ))
-  | Less -> wrap_cmp (<)
-  | LessEq -> wrap_cmp (<=)
-  | Greater -> wrap_cmp (>)
-  | GreaterEq -> wrap_cmp (>=)
-  | Eq -> wrap_cmp (=)
-  | Neq -> wrap_cmp (<>)
+  | Less ->
+    (fun tag left right ->
+      match left, right with
+      | VInt(l, _), VInt(r, _) -> VBool(l < r, tag)
+      | VBool(l, _), VBool(r, _) -> VBool(l < r, tag)
+      | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
+      | (VErr(_) as ve), _ | _, (VErr(_) as ve) -> ve
+      | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag))
+  | LessEq ->
+      (fun tag left right ->
+      match left, right with
+      | VInt(l, _), VInt(r, _) -> VBool(l <= r, tag)
+      | VBool(l, _), VBool(r, _) -> VBool(l <= r, tag)
+      | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
+      | (VErr(_) as ve), _ | _, (VErr(_) as ve) -> ve
+      | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag))
+  | Greater ->
+      (fun tag left right ->
+      match left, right with
+      | VInt(l, _), VInt(r, _) -> VBool(l > r, tag)
+      | VBool(l, _), VBool(r, _) -> VBool(l > r, tag)
+      | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
+      | (VErr(_) as ve), _ | _, (VErr(_) as ve) -> ve
+      | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag))
+  | GreaterEq -> 
+      (fun tag left right ->
+      match left, right with
+      | VInt(l, _), VInt(r, _) -> VBool(l >= r, tag)
+      | VBool(l, _), VBool(r, _) -> VBool(l >= r, tag)
+      | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
+      | (VErr(_) as ve), _ | _, (VErr(_) as ve) -> ve
+      | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag))
+  | Eq ->
+      (fun tag left right ->
+      match left, right with
+      | VInt(l, _), VInt(r, _) -> VBool(l = r, tag)
+      | VBool(l, _), VBool(r, _) -> VBool(l = r, tag)
+      | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
+      | (VErr(_) as ve), _ | _, (VErr(_) as ve) -> ve
+      | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag))
+  | Neq -> 
+      (fun tag left right ->
+      match left, right with
+      | VInt(l, _), VInt(r, _) -> VBool(l <> r, tag)
+      | VBool(l, _), VBool(r, _) -> VBool(l <> r, tag)
+      | VInt(_), VBool(_) | VBool(_), VInt _ -> VErr(type_mismatch tag (type_of_value left) right, [], tag)
+      | (VErr(_) as ve), _ | _, (VErr(_) as ve) -> ve
+      | VFunc(_), _ | _, VFunc(_) -> VErr(ArgumentError("cannot compare function values", tag), [], tag))
   | And -> wrap_bool_binop (&&)
   | Or -> wrap_bool_binop (||)
 

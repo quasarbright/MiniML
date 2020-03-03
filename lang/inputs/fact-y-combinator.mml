@@ -1,0 +1,13 @@
+let z f =
+    let wrap x =
+        let lam v = x x v in
+        f lam
+    in
+    wrap wrap
+in
+let fact g y =
+    if y = 0
+    then 1
+    else y * g (y - 1)
+in
+z fact 4
