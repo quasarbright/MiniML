@@ -5,6 +5,39 @@ open Values
 open Builtins
 open InterpreterUtils
 
+let get_child_exprs e =
+  match e with
+    | EInt(_)
+    | EBool(_)
+    | EId(_) -> []
+    | EPrim1(_, arg, _) -> [arg]
+    | EPrim2(_,left, right, _) -> [left;right]
+    | EIf(cnd, thn, els, _) -> [cnd;thn;els]
+    | ELet((_, value, _), body, _) ->
+        [value;body]
+    | EApp(func, arg, _) -> [func;arg]
+
+let check_well_formedness p =
+  let rec helpE env e =
+    match e with
+      | EInt(_)
+      | EBool(_)
+      | EPrim1(_)
+      | EPrim2(_)
+      | EIf(_)
+      | EApp(_) -> get_child_exprs e |> List.map @@ helpE env |> List.concat
+      | EId(name, tag) ->
+          if List.mem name env
+          then []
+          else [UnboundId(name, tag)]
+      | ELet((tagged_names, val_expr, bind_tag), body_expr, tag) ->
+          (* let dup_name_errs =  *)
+          let names = tagged_names |> List.map fst in
+          let val_errs = helpE env val_expr in
+          let env' = names @ env in
+          let body_errs = helpE env' body_expr in
+          val_errs @ body_errs
+  in 2
 
 let interpreter_failure_handler (evaluator : 'a expr -> 'a value) (on_err : exn -> 'a expr list -> 'a -> 'a value) (e : 'a expr) (on_success : 'a value -> 'b) =
   let value = evaluator e in
@@ -20,8 +53,6 @@ let add_to_trace_if_err e v =
   match v with
     | VErr(exn, exprs, tag) -> VErr(exn, e::exprs, tag)
     | _ -> v
-
-
 
 let interpret (p : sourcespan program) : sourcespan value =
   let rec helpE (env : 'a value envt) e =
