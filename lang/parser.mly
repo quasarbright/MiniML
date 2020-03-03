@@ -3,9 +3,6 @@ open Exprs
 
 let full_span () = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())
 let tok_span (start, endtok) = (Parsing.rhs_start_pos start, Parsing.rhs_end_pos endtok)
-(* let app_combine es =
-  List.fold_left
-    (fun app e -> EApp *)
 %}
 
 %token <int64> INT
@@ -48,6 +45,7 @@ atom :
   | IDENT { EId($1, full_span()) }
   | const { $1 }
 
+/*
 ident :
   | IDENT { ($1, full_span()) }
 
@@ -84,14 +82,94 @@ expr:
   | NOT expr { EPrim1(Not, $2, full_span()) }
   | UNEGATE expr { EPrim1(UNegate, $2, full_span()) }
   | app %prec APPLY { $1 }
-  | LPAREN expr RPAREN %prec GROUP { $2 }
+  | LPAREN expr RPAREN { $2 }
 
 
 app :
-  | app expr %prec APPLY { EApp($1, $2, full_span()) }
-  | expr { $1 }
+  | expr expr %prec APPLY { EApp($1, $2, full_span()) }
+
+*/
+
+ident :
+  IDENT { ($1, full_span()) }
+
+idents :
+  | ident { [$1] }
+  | ident idents { $1::$2 }
+
+bind :
+  | idents EQ eLet { ($1, $3, full_span()) }
+
+eLet :
+  | eIf { $1 }
+  | LET bind IN eLet { ELet($2, $4, full_span()) }
+
+eIf :
+  | eOr { $1 }
+  | IF eOr THEN eOr ELSE eOr { EIf($2, $4, $6, full_span()) }
+
+eOr :
+  | eAnd { $1 }
+  | eOr OR eAnd { EPrim2(Or, $1, $3, full_span()) }
+
+eAnd :
+  | eEq { $1 }
+  | eAnd AND eEq { EPrim2(And, $1, $3, full_span()) }
+
+eqOp :
+  | EQ { Eq }
+  | NEQ { Neq }
+
+eEq :
+  | eLess { $1 }
+  | eEq eqOp eLess { EPrim2($2, $1, $3, full_span()) }
+
+lessOp :
+  | GT { Greater }
+  | LT { Less }
+  | LTE { LessEq }
+  | GTE { GreaterEq }
+
+eLess :
+  | ePlus { $1 }
+  | eLess lessOp ePlus { EPrim2($2, $1, $3, full_span()) }
+
+plusOp :
+  | PLUS { Plus }
+  | MINUS { Minus }
+
+ePlus :
+  | eMul { $1 }
+  | ePlus plusOp eMul { EPrim2($2, $1, $3, full_span()) }
+
+mulOp :
+  | TIMES  { Times }
+  | DIVIDE { Divide }
+  | MODULO { Modulo }
+
+eMul :
+  | eUnop { $1 }
+  | eMul mulOp eUnop { EPrim2($2, $1, $3, full_span()) }
+
+unop :
+  | UNEGATE { UNegate }
+  | NOT { Not }
+
+eUnop :
+  | eApp { $1 }
+  | unop eApp { EPrim1($1, $2, full_span()) }
+
+eApp :
+  | eParen { $1 }
+  | eApp eParen { EApp($1, $2, full_span()) }
+
+eParen :
+  | atom { $1 }
+  | LPAREN eLet RPAREN { $2 }
+
+expr : eLet { $1 }
 
 program:
-  expr EOF { ($1, full_span()) }
+  expr { ($1, full_span()) }
 
 %%

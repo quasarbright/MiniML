@@ -1,0 +1,957 @@
+   0  $accept : %entry% $end
+
+   1  const : INT
+   2        | TRUE
+   3        | FALSE
+
+   4  atom : IDENT
+   5       | const
+
+   6  ident : IDENT
+
+   7  idents : ident
+   8         | ident idents
+
+   9  bind : idents EQ eIf
+
+  10  eLet : eIf
+  11       | LET bind IN eIf
+
+  12  eIf : eOr
+  13      | IF eOr THEN eOr ELSE eOr
+
+  14  eOr : eAnd
+  15      | eOr OR eAnd
+
+  16  eAnd : eEq
+  17       | eAnd AND eEq
+
+  18  eqOp : EQ
+  19       | NEQ
+
+  20  eEq : eLess
+  21      | eEq eqOp eLess
+
+  22  lessOp : GT
+  23         | LT
+  24         | LTE
+  25         | GTE
+
+  26  eLess : ePlus
+  27        | eLess lessOp ePlus
+
+  28  plusOp : PLUS
+  29         | MINUS
+
+  30  ePlus : eMul
+  31        | ePlus plusOp eMul
+
+  32  mulOp : TIMES
+  33        | DIVIDE
+  34        | MODULO
+
+  35  eMul : eUnop
+  36       | eMul mulOp eUnop
+
+  37  unop : UNEGATE
+  38       | NOT
+
+  39  eUnop : eApp
+  40        | eUnop unop eApp
+
+  41  eApp : eParen
+  42       | eApp eParen
+
+  43  eParen : atom
+  44         | LPAREN eLet RPAREN
+
+  45  expr : eParen
+
+  46  program : expr
+
+  47  %entry% : '\001' program
+
+state 0
+	$accept : . %entry% $end  (0)
+
+	'\001'  shift 1
+	.  error
+
+	%entry%  goto 2
+
+
+state 1
+	%entry% : '\001' . program  (47)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	program  goto 8
+	const  goto 9
+	atom  goto 10
+	eParen  goto 11
+	expr  goto 12
+
+
+state 2
+	$accept : %entry% . $end  (0)
+
+	$end  accept
+
+
+state 3
+	const : INT .  (1)
+
+	.  reduce 1
+
+
+state 4
+	atom : IDENT .  (4)
+
+	.  reduce 4
+
+
+state 5
+	const : TRUE .  (2)
+
+	.  reduce 2
+
+
+state 6
+	const : FALSE .  (3)
+
+	.  reduce 3
+
+
+state 7
+	eParen : LPAREN . eLet RPAREN  (44)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	LET  shift 13
+	IF  shift 14
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eIf  goto 15
+	eLet  goto 16
+	eOr  goto 17
+	eAnd  goto 18
+	eEq  goto 19
+	eLess  goto 20
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 8
+	%entry% : '\001' program .  (47)
+
+	.  reduce 47
+
+
+state 9
+	atom : const .  (5)
+
+	.  reduce 5
+
+
+state 10
+	eParen : atom .  (43)
+
+	.  reduce 43
+
+
+state 11
+	expr : eParen .  (45)
+
+	.  reduce 45
+
+
+state 12
+	program : expr .  (46)
+
+	.  reduce 46
+
+
+state 13
+	eLet : LET . bind IN eIf  (11)
+
+	IDENT  shift 26
+	.  error
+
+	ident  goto 27
+	idents  goto 28
+	bind  goto 29
+
+
+state 14
+	eIf : IF . eOr THEN eOr ELSE eOr  (13)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eOr  goto 30
+	eAnd  goto 18
+	eEq  goto 19
+	eLess  goto 20
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 15
+	eLet : eIf .  (10)
+
+	.  reduce 10
+
+
+state 16
+	eParen : LPAREN eLet . RPAREN  (44)
+
+	RPAREN  shift 31
+	.  error
+
+
+state 17
+	eIf : eOr .  (12)
+	eOr : eOr . OR eAnd  (15)
+
+	OR  shift 32
+	RPAREN  reduce 12
+	IN  reduce 12
+
+
+state 18
+	eOr : eAnd .  (14)
+	eAnd : eAnd . AND eEq  (17)
+
+	AND  shift 33
+	RPAREN  reduce 14
+	OR  reduce 14
+	IN  reduce 14
+	THEN  reduce 14
+	ELSE  reduce 14
+
+
+state 19
+	eAnd : eEq .  (16)
+	eEq : eEq . eqOp eLess  (21)
+
+	EQ  shift 34
+	NEQ  shift 35
+	RPAREN  reduce 16
+	AND  reduce 16
+	OR  reduce 16
+	IN  reduce 16
+	THEN  reduce 16
+	ELSE  reduce 16
+
+	eqOp  goto 36
+
+
+state 20
+	eEq : eLess .  (20)
+	eLess : eLess . lessOp ePlus  (27)
+
+	LT  shift 37
+	GT  shift 38
+	LTE  shift 39
+	GTE  shift 40
+	RPAREN  reduce 20
+	AND  reduce 20
+	OR  reduce 20
+	EQ  reduce 20
+	NEQ  reduce 20
+	IN  reduce 20
+	THEN  reduce 20
+	ELSE  reduce 20
+
+	lessOp  goto 41
+
+
+state 21
+	eLess : ePlus .  (26)
+	ePlus : ePlus . plusOp eMul  (31)
+
+	PLUS  shift 42
+	MINUS  shift 43
+	RPAREN  reduce 26
+	AND  reduce 26
+	OR  reduce 26
+	EQ  reduce 26
+	NEQ  reduce 26
+	LT  reduce 26
+	GT  reduce 26
+	LTE  reduce 26
+	GTE  reduce 26
+	IN  reduce 26
+	THEN  reduce 26
+	ELSE  reduce 26
+
+	plusOp  goto 44
+
+
+state 22
+	ePlus : eMul .  (30)
+	eMul : eMul . mulOp eUnop  (36)
+
+	TIMES  shift 45
+	DIVIDE  shift 46
+	MODULO  shift 47
+	RPAREN  reduce 30
+	AND  reduce 30
+	OR  reduce 30
+	EQ  reduce 30
+	NEQ  reduce 30
+	LT  reduce 30
+	GT  reduce 30
+	LTE  reduce 30
+	GTE  reduce 30
+	PLUS  reduce 30
+	MINUS  reduce 30
+	IN  reduce 30
+	THEN  reduce 30
+	ELSE  reduce 30
+
+	mulOp  goto 48
+
+
+state 23
+	eMul : eUnop .  (35)
+	eUnop : eUnop . unop eApp  (40)
+
+	NOT  shift 49
+	UNEGATE  shift 50
+	RPAREN  reduce 35
+	AND  reduce 35
+	OR  reduce 35
+	EQ  reduce 35
+	NEQ  reduce 35
+	LT  reduce 35
+	GT  reduce 35
+	LTE  reduce 35
+	GTE  reduce 35
+	PLUS  reduce 35
+	MINUS  reduce 35
+	TIMES  reduce 35
+	DIVIDE  reduce 35
+	MODULO  reduce 35
+	IN  reduce 35
+	THEN  reduce 35
+	ELSE  reduce 35
+
+	unop  goto 51
+
+
+state 24
+	eUnop : eApp .  (39)
+	eApp : eApp . eParen  (42)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	RPAREN  reduce 39
+	AND  reduce 39
+	OR  reduce 39
+	NOT  reduce 39
+	EQ  reduce 39
+	NEQ  reduce 39
+	LT  reduce 39
+	GT  reduce 39
+	LTE  reduce 39
+	GTE  reduce 39
+	PLUS  reduce 39
+	MINUS  reduce 39
+	UNEGATE  reduce 39
+	TIMES  reduce 39
+	DIVIDE  reduce 39
+	MODULO  reduce 39
+	IN  reduce 39
+	THEN  reduce 39
+	ELSE  reduce 39
+
+	const  goto 9
+	atom  goto 10
+	eParen  goto 52
+
+
+state 25
+	eApp : eParen .  (41)
+
+	.  reduce 41
+
+
+state 26
+	ident : IDENT .  (6)
+
+	.  reduce 6
+
+
+state 27
+	idents : ident .  (7)
+	idents : ident . idents  (8)
+
+	IDENT  shift 26
+	EQ  reduce 7
+
+	ident  goto 27
+	idents  goto 53
+
+
+state 28
+	bind : idents . EQ eIf  (9)
+
+	EQ  shift 54
+	.  error
+
+
+state 29
+	eLet : LET bind . IN eIf  (11)
+
+	IN  shift 55
+	.  error
+
+
+state 30
+	eIf : IF eOr . THEN eOr ELSE eOr  (13)
+	eOr : eOr . OR eAnd  (15)
+
+	OR  shift 32
+	THEN  shift 56
+	.  error
+
+
+state 31
+	eParen : LPAREN eLet RPAREN .  (44)
+
+	.  reduce 44
+
+
+state 32
+	eOr : eOr OR . eAnd  (15)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eAnd  goto 57
+	eEq  goto 19
+	eLess  goto 20
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 33
+	eAnd : eAnd AND . eEq  (17)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eEq  goto 58
+	eLess  goto 20
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 34
+	eqOp : EQ .  (18)
+
+	.  reduce 18
+
+
+state 35
+	eqOp : NEQ .  (19)
+
+	.  reduce 19
+
+
+state 36
+	eEq : eEq eqOp . eLess  (21)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eLess  goto 59
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 37
+	lessOp : LT .  (23)
+
+	.  reduce 23
+
+
+state 38
+	lessOp : GT .  (22)
+
+	.  reduce 22
+
+
+state 39
+	lessOp : LTE .  (24)
+
+	.  reduce 24
+
+
+state 40
+	lessOp : GTE .  (25)
+
+	.  reduce 25
+
+
+state 41
+	eLess : eLess lessOp . ePlus  (27)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	ePlus  goto 60
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 42
+	plusOp : PLUS .  (28)
+
+	.  reduce 28
+
+
+state 43
+	plusOp : MINUS .  (29)
+
+	.  reduce 29
+
+
+state 44
+	ePlus : ePlus plusOp . eMul  (31)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eMul  goto 61
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 45
+	mulOp : TIMES .  (32)
+
+	.  reduce 32
+
+
+state 46
+	mulOp : DIVIDE .  (33)
+
+	.  reduce 33
+
+
+state 47
+	mulOp : MODULO .  (34)
+
+	.  reduce 34
+
+
+state 48
+	eMul : eMul mulOp . eUnop  (36)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eUnop  goto 62
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 49
+	unop : NOT .  (38)
+
+	.  reduce 38
+
+
+state 50
+	unop : UNEGATE .  (37)
+
+	.  reduce 37
+
+
+state 51
+	eUnop : eUnop unop . eApp  (40)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eApp  goto 63
+	eParen  goto 25
+
+
+state 52
+	eApp : eApp eParen .  (42)
+
+	.  reduce 42
+
+
+state 53
+	idents : ident idents .  (8)
+
+	.  reduce 8
+
+
+state 54
+	bind : idents EQ . eIf  (9)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	IF  shift 14
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eIf  goto 64
+	eOr  goto 17
+	eAnd  goto 18
+	eEq  goto 19
+	eLess  goto 20
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 55
+	eLet : LET bind IN . eIf  (11)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	IF  shift 14
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eIf  goto 65
+	eOr  goto 17
+	eAnd  goto 18
+	eEq  goto 19
+	eLess  goto 20
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 56
+	eIf : IF eOr THEN . eOr ELSE eOr  (13)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eOr  goto 66
+	eAnd  goto 18
+	eEq  goto 19
+	eLess  goto 20
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 57
+	eOr : eOr OR eAnd .  (15)
+	eAnd : eAnd . AND eEq  (17)
+
+	AND  shift 33
+	RPAREN  reduce 15
+	OR  reduce 15
+	IN  reduce 15
+	THEN  reduce 15
+	ELSE  reduce 15
+
+
+state 58
+	eAnd : eAnd AND eEq .  (17)
+	eEq : eEq . eqOp eLess  (21)
+
+	EQ  shift 34
+	NEQ  shift 35
+	RPAREN  reduce 17
+	AND  reduce 17
+	OR  reduce 17
+	IN  reduce 17
+	THEN  reduce 17
+	ELSE  reduce 17
+
+	eqOp  goto 36
+
+
+state 59
+	eEq : eEq eqOp eLess .  (21)
+	eLess : eLess . lessOp ePlus  (27)
+
+	LT  shift 37
+	GT  shift 38
+	LTE  shift 39
+	GTE  shift 40
+	RPAREN  reduce 21
+	AND  reduce 21
+	OR  reduce 21
+	EQ  reduce 21
+	NEQ  reduce 21
+	IN  reduce 21
+	THEN  reduce 21
+	ELSE  reduce 21
+
+	lessOp  goto 41
+
+
+state 60
+	eLess : eLess lessOp ePlus .  (27)
+	ePlus : ePlus . plusOp eMul  (31)
+
+	PLUS  shift 42
+	MINUS  shift 43
+	RPAREN  reduce 27
+	AND  reduce 27
+	OR  reduce 27
+	EQ  reduce 27
+	NEQ  reduce 27
+	LT  reduce 27
+	GT  reduce 27
+	LTE  reduce 27
+	GTE  reduce 27
+	IN  reduce 27
+	THEN  reduce 27
+	ELSE  reduce 27
+
+	plusOp  goto 44
+
+
+state 61
+	ePlus : ePlus plusOp eMul .  (31)
+	eMul : eMul . mulOp eUnop  (36)
+
+	TIMES  shift 45
+	DIVIDE  shift 46
+	MODULO  shift 47
+	RPAREN  reduce 31
+	AND  reduce 31
+	OR  reduce 31
+	EQ  reduce 31
+	NEQ  reduce 31
+	LT  reduce 31
+	GT  reduce 31
+	LTE  reduce 31
+	GTE  reduce 31
+	PLUS  reduce 31
+	MINUS  reduce 31
+	IN  reduce 31
+	THEN  reduce 31
+	ELSE  reduce 31
+
+	mulOp  goto 48
+
+
+state 62
+	eMul : eMul mulOp eUnop .  (36)
+	eUnop : eUnop . unop eApp  (40)
+
+	NOT  shift 49
+	UNEGATE  shift 50
+	RPAREN  reduce 36
+	AND  reduce 36
+	OR  reduce 36
+	EQ  reduce 36
+	NEQ  reduce 36
+	LT  reduce 36
+	GT  reduce 36
+	LTE  reduce 36
+	GTE  reduce 36
+	PLUS  reduce 36
+	MINUS  reduce 36
+	TIMES  reduce 36
+	DIVIDE  reduce 36
+	MODULO  reduce 36
+	IN  reduce 36
+	THEN  reduce 36
+	ELSE  reduce 36
+
+	unop  goto 51
+
+
+state 63
+	eUnop : eUnop unop eApp .  (40)
+	eApp : eApp . eParen  (42)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	RPAREN  reduce 40
+	AND  reduce 40
+	OR  reduce 40
+	NOT  reduce 40
+	EQ  reduce 40
+	NEQ  reduce 40
+	LT  reduce 40
+	GT  reduce 40
+	LTE  reduce 40
+	GTE  reduce 40
+	PLUS  reduce 40
+	MINUS  reduce 40
+	UNEGATE  reduce 40
+	TIMES  reduce 40
+	DIVIDE  reduce 40
+	MODULO  reduce 40
+	IN  reduce 40
+	THEN  reduce 40
+	ELSE  reduce 40
+
+	const  goto 9
+	atom  goto 10
+	eParen  goto 52
+
+
+state 64
+	bind : idents EQ eIf .  (9)
+
+	.  reduce 9
+
+
+state 65
+	eLet : LET bind IN eIf .  (11)
+
+	.  reduce 11
+
+
+state 66
+	eIf : IF eOr THEN eOr . ELSE eOr  (13)
+	eOr : eOr . OR eAnd  (15)
+
+	OR  shift 32
+	ELSE  shift 67
+	.  error
+
+
+state 67
+	eIf : IF eOr THEN eOr ELSE . eOr  (13)
+
+	INT  shift 3
+	IDENT  shift 4
+	TRUE  shift 5
+	FALSE  shift 6
+	LPAREN  shift 7
+	.  error
+
+	const  goto 9
+	atom  goto 10
+	eOr  goto 68
+	eAnd  goto 18
+	eEq  goto 19
+	eLess  goto 20
+	ePlus  goto 21
+	eMul  goto 22
+	eUnop  goto 23
+	eApp  goto 24
+	eParen  goto 25
+
+
+state 68
+	eIf : IF eOr THEN eOr ELSE eOr .  (13)
+	eOr : eOr . OR eAnd  (15)
+
+	OR  shift 32
+	RPAREN  reduce 13
+	IN  reduce 13
+
+
+37 terminals, 25 nonterminals
+48 grammar rules, 69 states

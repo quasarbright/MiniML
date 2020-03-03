@@ -58,7 +58,11 @@ let string_of_file (file_name : string) : string =
 
 let parse_string (name : string) (s : string) : sourcespan program = 
   let lexbuf = Lexing.from_string s in
-  parse name lexbuf
+  try
+    parse name lexbuf
+  with Failure(msg) ->
+    let msg' = sprintf "%s: %s" name msg in
+    failwith msg'
 
 let parse_file (name : string) input_file : sourcespan program = 
   let lexbuf = Lexing.from_channel input_file in
