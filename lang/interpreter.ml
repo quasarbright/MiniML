@@ -31,7 +31,7 @@ let check_well_formedness p =
           then []
           else [UnboundId(name, tag)]
       | ELet((tagged_names, val_expr, bind_tag), body_expr, tag) ->
-          (* let dup_name_errs =  *)
+          let dup_name_errs = 
           let names = tagged_names |> List.map fst in
           let val_errs = helpE env val_expr in
           let env' = names @ env in
