@@ -78,7 +78,7 @@ let string_of_error = function
   | err -> Printexc.to_string err
 
 let ( >> ) f g x = g (f x)
-let string_of_value v =
+let rec string_of_value v =
   let rec helpF (Func(maybe_name, arg_name, body, env, tag)) =
     let string_of_body =
       match body with
@@ -90,7 +90,18 @@ let string_of_value v =
         | None -> ""
         | Some(name) -> sprintf "%s: " name
     in
-    sprintf "(%s%s -> %s)" name_prefix arg_name string_of_body
+    (* let () = printf "|||%d|||n\n" (List.length env) in *)
+    (sprintf "(%s%s -> %s)" name_prefix arg_name string_of_body)
+    ^
+    (* (if Option.is_some maybe_name
+    then *)
+    "{" ^
+      (env
+      |> List.map (fun (name, value) -> sprintf "[%s := %s]" name (string_of_value value))
+      |> String.concat ", ")
+    ^ "}"
+    (* else "") *)
+
   in
   match v with
     | VInt(num, _) -> Int64.to_string num

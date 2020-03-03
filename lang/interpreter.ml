@@ -12,25 +12,36 @@ let interpreter_failure_handler (evaluator : 'a expr -> 'a value) (on_err : exn 
     | VErr(exn, exprs, tag) -> on_err exn exprs tag
     | _ -> on_success value
 
+let debug = false
+let log s = if debug then print_string s else ()
+
 let add_to_trace_if_err e v =
+  log @@ Printf.sprintf "evaluated %s:\n\t%s\n\n" (string_of_expr e) (string_of_value v);
   match v with
     | VErr(exn, exprs, tag) -> VErr(exn, e::exprs, tag)
     | _ -> v
 
+
+
 let interpret (p : sourcespan program) : sourcespan value =
   let rec helpE (env : 'a value envt) e =
+    log @@ Printf.sprintf "evaluating %s\nwith environment\n%s\n\n" (string_of_expr e)
+      (env
+      |> List.map
+         (fun (name, value) -> Printf.sprintf "\t%s := %s" name (string_of_value value))
+      |> String.concat "\n");
     let failure_bind env = interpreter_failure_handler (helpE env) (fun exn exprs tag -> VErr(exn, exprs, tag)) in
     (* abstracts handling failure while evaluating 
     NOT ACTUALLY A MONAD *)
     let (>>=) = failure_bind env in
     match e with
-      | EInt(num, tag) -> VInt(num, tag)
-      | EBool(b, tag) -> VBool(b, tag)
+      | EInt(num, tag) -> VInt(num, tag) |> add_to_trace_if_err e
+      | EBool(b, tag) -> VBool(b, tag) |> add_to_trace_if_err e
       | EId(name, tag) ->
           begin
             match find_opt env name with
               | None -> VErr(UnboundId(name, tag), [e], tag)
-              | Some(v) -> v 
+              | Some(v) -> v |> add_to_trace_if_err e
           end
       | EPrim1(prim1, arg_expr, tag) ->
           arg_expr >>= fn_of_prim1 prim1 tag
@@ -47,26 +58,50 @@ let interpret (p : sourcespan program) : sourcespan value =
               match v with
                 | VBool(b, _) ->
                     if b
-                    then helpE env thn
-                    else helpE env els
+                    then thn >>= (fun thn -> thn)
+                    else els >>= (fun els -> els)
                 | _ -> failwith "unexpected type error in EIf interpreting"))
+          |> add_to_trace_if_err e
       | ELet((names, val_expr, bind_tag), body_expr, tag) ->
-          match names with
-          | [(name, _)] ->
-              val_expr >>=
-              (fun value ->
-                let env' = (name, value)::env in
+          begin
+            match names with
+            | [(name, _)] ->
+                val_expr >>=
+                (fun value ->
+                  let env' = (name, value)::env in
+                  let (>>=) = failure_bind env' in
+                  body_expr >>= (fun body -> body)
+                )
+                |> add_to_trace_if_err e
+            | (name, _)::(arg_name::arg_names) ->
+                let arg_name' = fst arg_name in
+                let arg_names' = List.map fst arg_names in
+                let func_value = VFunc(Func(Some(name), arg_name', helpF arg_names' val_expr env tag, env, tag)) in
+                let env' = (name, func_value)::env in
                 let (>>=) = failure_bind env' in
                 body_expr >>= (fun body -> body)
-              )
-          | (name, _)::(arg_name::arg_names) ->
-              let arg_name' = fst arg_name in
-              let arg_names' = List.map fst arg_names in
-              let func_value = VFunc(Func(Some(name), arg_name', helpF arg_names' val_expr env tag, env, tag)) in
-              let env' = (name, func_value)::env in
-              let (>>=) = failure_bind env' in
-              body_expr >>= (fun body -> body)
-          | [] -> raise (InternalError("encountered elet with no binds while interpreting"))
+                |> add_to_trace_if_err e
+            | [] -> raise (InternalError("encountered elet with no binds while interpreting"))
+          end
+      | EApp(func_expr, arg_expr, tag) ->
+          func_expr >>= (fun func_value ->
+          match func_value with
+            | VFunc(Func(maybe_name, arg_name, body, env, tag)) ->
+                arg_expr >>= (fun arg_value -> 
+                let arg_pair = (arg_name, arg_value) in
+                match body with
+                  | Left(Func(maybe_name', arg_name', body', _, tag')) ->
+                      VFunc(Func(maybe_name', arg_name', body', arg_pair::env, tag'))
+                      (* I thought this should be env', but really, this only happens within a multi argument function.
+                      otherwise, body is an expr which may be another function or a straight value. So it must inherit env *)
+                  | Right(body_expr) ->
+                      let env' = arg_pair::env in
+                      let (>>=) = failure_bind env' in
+                      body_expr >>= (fun body -> body)
+                )
+            | _ -> VErr(Failure("attempted to apply non-function"), [], tag)
+          )
+          |> add_to_trace_if_err e
   and helpF arg_names val_expr env tag =
     match arg_names with
       | [] -> Right(val_expr)

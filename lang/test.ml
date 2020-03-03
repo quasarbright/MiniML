@@ -92,6 +92,15 @@ let parse_tests = "parse_tests">:::[
       (EApp(EApp(EId("g", ()), EId("c", ()), ()), EId("d", ()), ())),
       ()
       ), ());
+  t_parse "if-in-if" "if if true then true else false then 2 else 3"
+    (
+      EIf(
+        EIf(EBool(true, ()), EBool(true, ()), EBool(false, ()), ()),
+        EInt(2L, ()),
+        EInt(3L, ()),
+        ()
+      )
+    , ());
 ]
 
 let integration_tests = "integration_tests">:::[

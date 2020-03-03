@@ -113,9 +113,6 @@ let drop_ending ending s =
   let re = sprintf "%s$" ending |> Str.regexp in
   Str.replace_first re "" s
 
-let () =
-  print_endline (drop_ending "\\.[a-zA-z_-]*" "one.mml")
-
 let get_filenames_matching_extension dirname ext =
   let filenames = dirname |> Sys.readdir |> Array.to_list in
   filenames |> List.filter (fun filename -> ends_with filename ext)
