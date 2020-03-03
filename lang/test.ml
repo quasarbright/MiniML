@@ -106,4 +106,5 @@ let () =
     suite;
     parse_tests;
     integration_tests;
+    input_file_suite interpret;
   ]
