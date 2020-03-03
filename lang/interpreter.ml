@@ -70,7 +70,7 @@ let interpret (p : sourcespan program) : sourcespan value =
   and helpF arg_names val_expr env tag =
     match arg_names with
       | [] -> Right(val_expr)
-      | arg_name::arg_names' -> Left(Func(None, arg_name, helpF arg_names val_expr env tag, env, tag))
+      | arg_name::arg_names' -> Left(Func(None, arg_name, helpF arg_names' val_expr env tag, env, tag))
   in
   let (e, tag) = p in
   helpE [] e

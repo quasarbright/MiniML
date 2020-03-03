@@ -144,7 +144,6 @@ let get_input_test_triplets input_dir source_ext out_ext err_ext =
     |> List.map (fun filename -> drop_ending "\\.[a-zA-z_-]*" filename)
     |> remove_dups
   in
-  printf "%s\n" (String.concat ", " input_filenames_no_ext);
   input_filenames_no_ext
   |> List.map
       (fun filename_no_ext ->

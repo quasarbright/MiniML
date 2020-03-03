@@ -8,6 +8,8 @@ let () =
   then print_endline "must supply filename to main"
   else
     let filename = Sys.argv.(1) in
+    (* let p = parse_string filename (string_of_file filename) in
+    print_endline (string_of_program p); *)
     let value = 
       filename
       |> run_file interpret

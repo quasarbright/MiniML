@@ -36,58 +36,25 @@ let tok_span (start, endtok) = (Parsing.rhs_start_pos start, Parsing.rhs_end_pos
 
 %%
 
-const :
-  | INT { EInt($1, full_span()) }
-  | TRUE { EBool(true, full_span()) }
-  | FALSE { EBool(false, full_span()) }
-
-atom :
-  | IDENT { EId($1, full_span()) }
-  | const { $1 }
-
 /*
-ident :
-  | IDENT { ($1, full_span()) }
+expr is supposed to be assigned to the lowest-precedence thing
+left associativity:
+  plusOp : '+' | '-'
 
-idents :
-  | ident { [$1] }
-  | ident idents { $1::$2 }
+  ePlus :
+    | eTimes
+    | ePlus plusOp eTimes
 
-bind :
-  | idents EQ expr { ($1, $3, full_span()) }
+right associativity:
+  exponentOp : '**'
+  eExponent :
+    | eLess
+    | eLess exponentOp eExponent
 
-let_bind :
-  | LET bind IN expr { ELet($2, $4, full_span()) }
-
-conditional :
-  | IF expr THEN expr ELSE expr { EIf($2, $4, $6, full_span()) }
-
-expr:
-  | atom %prec ATOM { $1 }
-  | let_bind %prec ASSIGN { $1 }
-  | conditional %prec CONDITIONAL { $1 }
-  | expr OR expr { EPrim2(Or, $1, $3, full_span()) }
-  | expr AND expr { EPrim2(And, $1, $3, full_span()) }
-  | expr EQ expr { EPrim2(Eq, $1, $3, full_span()) }
-  | expr NEQ expr { EPrim2(Neq, $1, $3, full_span()) }
-  | expr GTE expr { EPrim2(GreaterEq, $1, $3, full_span()) }
-  | expr LTE expr { EPrim2(LessEq, $1, $3, full_span()) }
-  | expr GT expr { EPrim2(Greater, $1, $3, full_span()) }
-  | expr LT expr { EPrim2(Less, $1, $3, full_span()) }
-  | expr MINUS expr { EPrim2(Minus, $1, $3, full_span()) }
-  | expr PLUS expr { EPrim2(Plus, $1, $3, full_span()) }
-  | expr MODULO expr { EPrim2(Modulo, $1, $3, full_span()) }
-  | expr DIVIDE expr { EPrim2(Divide, $1, $3, full_span()) }
-  | expr TIMES expr { EPrim2(Times, $1, $3, full_span()) }
-  | NOT expr { EPrim1(Not, $2, full_span()) }
-  | UNEGATE expr { EPrim1(UNegate, $2, full_span()) }
-  | app %prec APPLY { $1 }
-  | LPAREN expr RPAREN { $2 }
-
-
-app :
-  | expr expr %prec APPLY { EApp($1, $2, full_span()) }
-
+nonassociative:
+  eIf :
+    | eOr
+    | 'if' eIf 'then' eIf 'else' eIf
 */
 
 ident :
@@ -106,7 +73,7 @@ eLet :
 
 eIf :
   | eOr { $1 }
-  | IF eOr THEN eOr ELSE eOr { EIf($2, $4, $6, full_span()) }
+  | IF eIf THEN eIf ELSE eIf { EIf($2, $4, $6, full_span()) }
 
 eOr :
   | eAnd { $1 }
@@ -143,7 +110,7 @@ ePlus :
   | ePlus plusOp eMul { EPrim2($2, $1, $3, full_span()) }
 
 mulOp :
-  | TIMES  { Times }
+  | TIMES { Times }
   | DIVIDE { Divide }
   | MODULO { Modulo }
 
@@ -157,7 +124,7 @@ unop :
 
 eUnop :
   | eApp { $1 }
-  | unop eApp { EPrim1($1, $2, full_span()) }
+  | unop eUnop { EPrim1($1, $2, full_span()) }
 
 eApp :
   | eParen { $1 }
@@ -165,7 +132,16 @@ eApp :
 
 eParen :
   | atom { $1 }
-  | LPAREN eLet RPAREN { $2 }
+  | LPAREN expr RPAREN { $2 }
+
+const :
+  | INT { EInt($1, full_span()) }
+  | TRUE { EBool(true, full_span()) }
+  | FALSE { EBool(false, full_span()) }
+
+atom :
+  | IDENT { EId($1, full_span()) }
+  | const { $1 }
 
 expr : eLet { $1 }
 
