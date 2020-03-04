@@ -74,8 +74,14 @@ let string_of_error = function
       sprintf "Type error at %s: expected %s, but got %s" (string_of_sourcespan pos) (string_of_typ expected) (string_of_typ actual)
   | ArgumentError(msg, pos) -> sprintf "Argument error at %s: %s" (string_of_sourcespan pos) msg
   | InternalError(msg) -> sprintf "Internal error: %s" msg
-  | UnboundId(name, pos) -> sprintf "the name %s is not in scope at %s" name (string_of_sourcespan pos)
+  | UnboundId(name, pos) -> sprintf "The name %s is not in scope at %s" name (string_of_sourcespan pos)
+  | DuplicateId(name, new_pos, old_pos) -> sprintf "The name %s, bound at %s, shadows another binding at %s" name (string_of_sourcespan new_pos) (string_of_sourcespan old_pos)
   | err -> Printexc.to_string err
+
+let string_of_errors errors =
+  errors
+  |> List.map string_of_error
+  |> String.concat "\n\n"
 
 let ( >> ) f g x = g (f x)
 let rec string_of_value v =

@@ -1,0 +1,186 @@
+rm -rf output/*.o output/*.s output/*.dSYM output/*.run *.log runnables/
+ocamlbuild -clean
+ocamlbuild -r -use-ocamlfind -package oUnit,extlib,unix,str test.native
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules test.ml > test.ml.depends
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules exprs.ml > exprs.ml.depends
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules interpreter.ml > interpreter.ml.depends
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules builtins.ml > builtins.ml.depends
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules errors.ml > errors.ml.depends
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o exprs.cmo exprs.ml
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules types.ml > types.ml.depends
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o types.cmo types.ml
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules values.ml > values.ml.depends
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o errors.cmo errors.ml
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o values.cmo values.ml
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules interpreterUtils.ml > interpreterUtils.ml.depends
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules pretty.ml > pretty.ml.depends
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules runner.ml > runner.ml.depends
+ocamllex.opt -q lexer.mll
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules lexer.ml > lexer.ml.depends
+ocamlyacc parser.mly
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules parser.mli > parser.mli.depends
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o parser.cmi parser.mli
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o pretty.cmo pretty.ml
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o lexer.cmo lexer.ml
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o builtins.cmo builtins.ml
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o interpreterUtils.cmo interpreterUtils.ml
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o runner.cmo runner.ml
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o interpreter.cmo interpreter.ml
+ocamlfind ocamlc -c -package oUnit,extlib,unix,str -o test.cmo test.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o exprs.cmx exprs.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o types.cmx types.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o errors.cmx errors.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o values.cmx values.ml
+ocamlfind ocamldep -package oUnit,extlib,unix,str -modules parser.ml > parser.ml.depends
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o parser.cmx parser.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o pretty.cmx pretty.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o lexer.cmx lexer.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o builtins.cmx builtins.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o interpreterUtils.cmx interpreterUtils.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o runner.cmx runner.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o interpreter.cmx interpreter.ml
+ocamlfind ocamlopt -c -package oUnit,extlib,unix,str -o test.cmx test.ml
+ocamlfind ocamlopt -linkpkg -package oUnit,extlib,unix,str exprs.cmx types.cmx errors.cmx values.cmx builtins.cmx interpreterUtils.cmx parser.cmx lexer.cmx pretty.cmx runner.cmx interpreter.cmx test.cmx -o test.native
+mkdir -p runnables
+mv test.native runnables/test
+⠀⠀⠀⠀⠀⠀⠀⠀⢐⢅⠀⠀⠪⡨⠀⠀⠀⠜⢌⢪⠀⡪⡊⠀⢑⢅⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢀⠐⢅⢣⢂⠁⠔⠈⡀⠀⠨⢊⠆⠨⡂⠀⡠⡠⢐⢅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠰⢀⢕⢅⢕⠄⠀⠅⠀⠀⠀⠡⠁⢌⠀⡐⡜⢔⢅⢆⠅⡂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢨⠢⡱⡨⡢⢣⠀⠀⠀⠀⠀⠀⠨⡂⢐⢜⠌⢂⢆⠅⡆⡃⢅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠸⡨⡢⢪⠢⡃⡀⠀⠀⢨⢐⠨⢂⠕⡁⠀⠀⡗⢨⢊⡂⢅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⡌⢂⠊⠂⠃⠕⢕⢡⠢⠨⡢⡪⢢⢃⠼⠀⡀⠔⠡⡱⡨⠂⡅⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢀⠅⢠⠠⡠⡀⢀⠀⡠⡱⡑⡜⠔⠁⠂⠁⠀⠀⢕⠕⢜⠠⡂⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢨⠂⢕⢑⠕⠔⠁⡤⢐⠨⢐⢕⢑⢄⠀⠀⠀⠀⡇⢕⠕⢜⢀⢀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡕⢕⠑⣔⠀⠀⢟⠀⠀⡢⡱⡡⢣⠱⡡⡂⠠⡱⡑⡕⡱⢐⠡⢊⠔⡠⠠⡀⢀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢀⢌⢎⢜⠜⡄⡠⠃⠀⠀⡪⢢⠱⡑⢕⢑⢌⢎⢢⢱⢕⠅⢅⠪⡐⢌⠢⢑⠌⡂⢅⠕
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡗⡕⡝⠈⠀⠀⠀⢀⠪⡢⢣⠱⡑⢕⢑⢌⢆⢣⡣⡑⡡⢊⠔⡡⢊⠔⡨⢂⠅⡊
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢣⢱⢝⢜⢅⠀⠀⠀⠀⠑⠱⢑⢨⠐⡅⡣⡱⡁⢎⢎⢐⠌⡂⡊⠔⡡⢊⠔⡡⢊⠔
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⡸⡸⡪⡣⣂⠀⠀⠀⠀⠀⠀⠀⡪⢪⢘⢔⠸⡸⡱⡂⠅⡊⢔⠡⡂⢅⢊⠔⡡⢊
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⡱⡱⡹⡸⡀⠀⠀⠀⠀⠀⠀⡊⢆⢃⢆⠣⡕⣕⠅⠨⢂⠅⡊⢔⠡⢂⠕⡐⡡
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢨⢪⡺⡸⡱⡀⠀⠀⡄⢆⠣⡪⡘⡌⠆⡱⡹⡸⡀⠊⡐⡡⢊⠔⡡⠡⡊⠔⡐
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢏⢎⢎⢎⢞⢜⠀⢌⢎⡢⡣⡪⠊⠈⠀⡪⡪⡂⠅⠠⢐⠌⡂⡪⢐⠡⢊⠌⡢
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⢯⢪⢪⢪⢪⢪⢣⢣⠀⠁⠊⠀⠀⠀⠀⠀⢱⢱⠁⢀⠂⢀⠪⡐⢌⠢⠡⡑⠌⠔
+⠀⠀⠀⠀⠀⠀⠀⠀⢠⡯⡣⡣⡣⡣⡣⡱⢑⢕⢥⠀⠀⠀⠀⠀⠀⠀⡘⠬⢠⠂⠀⡂⠨⡐⢅⢊⠌⡢⢑⠡
+⠀⠀⠀⠀⠀⠀⠀⢠⡟⡜⡬⡪⡪⡪⡪⡪⡐⡠⡑⡝⡔⡀⡀⡀⡠⡰⡑⠁⢸⢐⠀⠱⡈⠔⡡⢂⠕⡐⡡⢊
+⠀⠀⠀⠀⠀⠀⢠⡿⡱⡱⡱⡸⡸⡨⡪⡪⡢⠐⡰⠈⢌⠪⢪⢘⠌⠂⠀⠀⠂⠰⠀⠁⢢⠑⡐⢅⢊⠔⡨⢂
+..
+Ran: 2 tests in: 0.10 seconds.
+OK
+..................
+Ran: 18 tests in: 0.11 seconds.
+OK
+........................
+Ran: 24 tests in: 0.11 seconds.
+OK
+FFFF...F..|||inputs/add.mml||||||, The name a is not in scope at inputs/add.mml, 1:14-1:15
+
+The name b is not in scope at inputs/add.mml, 1:18-1:19||||||||
+
+|||inputs/curry-stress.mml||||||, The name a is not in scope at inputs/curry-stress.mml, 1:17-1:18
+
+The name b is not in scope at inputs/curry-stress.mml, 1:21-1:22
+
+The name c is not in scope at inputs/curry-stress.mml, 1:25-1:26||||||||
+
+|||inputs/if-lazy.mml||||||1, ||||||||
+
+|||inputs/inner-error.mml||||||, Traceback (most recent call last):
+
+inputs/inner-error.mml, 1:0-1:29
+	(((1 + 2) + 3) + (1 + (1 / 0)))
+inputs/inner-error.mml, 1:14-1:27
+	(1 + (1 / 0))
+inputs/inner-error.mml, 1:20-1:25
+	(1 / 0)
+
+Divide by zero at inputs/inner-error.mml, 1:20-1:25||||||||
+
+|||inputs/weird-curry.mml||||||, The name g is not in scope at inputs/weird-curry.mml, 1:10-1:11||||||||
+
+|||inputs/one.mml||||||1, ||||||||
+
+|||inputs/fact-z-combinator.mml||||||, The name x is not in scope at inputs/fact-z-combinator.mml, 3:20-3:21
+
+The name x is not in scope at inputs/fact-z-combinator.mml, 3:22-3:23
+
+The name v is not in scope at inputs/fact-z-combinator.mml, 3:24-3:25
+
+The name f is not in scope at inputs/fact-z-combinator.mml, 4:8-4:9
+
+The name y is not in scope at inputs/fact-z-combinator.mml, 9:7-9:8
+
+The name y is not in scope at inputs/fact-z-combinator.mml, 11:9-11:10
+
+The name g is not in scope at inputs/fact-z-combinator.mml, 11:13-11:14
+
+The name y is not in scope at inputs/fact-z-combinator.mml, 11:16-11:17||||||||
+
+|||inputs/id-function.mml||||||, The name x is not in scope at inputs/id-function.mml, 1:11-1:12||||||||
+
+|||inputs/let-stress-test.mml||||||15, ||||||||
+
+|||inputs/div_by_zero.mml||||||, Traceback (most recent call last):
+
+inputs/div_by_zero.mml, 1:0-1:5
+	(1 / 0)
+
+Divide by zero at inputs/div_by_zero.mml, 1:0-1:5||||||||
+
+
+==============================================================================
+Error: inputs:8:inputs/weird-curry.mml.
+
+File "/Users/mdelmonaco/Documents/GitHub/MiniML/lang/_build/oUnit-inputs-Mikes-MacBook-Pro.local#01.log", line 24, characters 1-1:
+Error: inputs:8:inputs/weird-curry.mml (in the log).
+
+File "runner.ml", line 188, characters 1-1:
+Error: inputs:8:inputs/weird-curry.mml (in the code).
+
+expected: 2 but got: 
+------------------------------------------------------------------------------
+==============================================================================
+Error: inputs:3:inputs/id-function.mml.
+
+File "/Users/mdelmonaco/Documents/GitHub/MiniML/lang/_build/oUnit-inputs-Mikes-MacBook-Pro.local#02.log", line 10, characters 1-1:
+Error: inputs:3:inputs/id-function.mml (in the log).
+
+File "runner.ml", line 188, characters 1-1:
+Error: inputs:3:inputs/id-function.mml (in the code).
+
+expected: 1 but got: 
+------------------------------------------------------------------------------
+==============================================================================
+Error: inputs:2:inputs/curry-stress.mml.
+
+File "/Users/mdelmonaco/Documents/GitHub/MiniML/lang/_build/oUnit-inputs-Mikes-MacBook-Pro.local#01.log", line 10, characters 1-1:
+Error: inputs:2:inputs/curry-stress.mml (in the log).
+
+File "runner.ml", line 188, characters 1-1:
+Error: inputs:2:inputs/curry-stress.mml (in the code).
+
+expected: 6 but got: 
+------------------------------------------------------------------------------
+==============================================================================
+Error: inputs:1:inputs/fact-z-combinator.mml.
+
+File "/Users/mdelmonaco/Documents/GitHub/MiniML/lang/_build/oUnit-inputs-Mikes-MacBook-Pro.local#02.log", line 2, characters 1-1:
+Error: inputs:1:inputs/fact-z-combinator.mml (in the log).
+
+File "runner.ml", line 188, characters 1-1:
+Error: inputs:1:inputs/fact-z-combinator.mml (in the code).
+
+expected: 24 but got: 
+------------------------------------------------------------------------------
+==============================================================================
+Error: inputs:0:inputs/add.mml.
+
+File "/Users/mdelmonaco/Documents/GitHub/MiniML/lang/_build/oUnit-inputs-Mikes-MacBook-Pro.local#01.log", line 2, characters 1-1:
+Error: inputs:0:inputs/add.mml (in the log).
+
+File "runner.ml", line 188, characters 1-1:
+Error: inputs:0:inputs/add.mml (in the code).
+
+expected: 110 but got: 
+------------------------------------------------------------------------------
+Ran: 10 tests in: 0.11 seconds.
+FAILED: Cases: 10 Tried: 10 Errors: 0 Failures: 5 Skip:  0 Todo: 0 Timeouts: 0.

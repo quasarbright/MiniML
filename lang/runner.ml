@@ -6,6 +6,9 @@ open Exprs
 open Values
 open Pretty
 open OUnit2
+open Interpreter
+
+let (>>) f g x = g (f x)
 
 let parse (name : string) lexbuf : sourcespan program  =
   try 
@@ -64,25 +67,39 @@ let parse_string (name : string) (s : string) : sourcespan program =
     let msg' = sprintf "%s: %s" name msg in
     failwith msg'
 
-let parse_file (name : string) input_file : sourcespan program = 
+let parse_file_chan (name : string) input_file : sourcespan program = 
   let lexbuf = Lexing.from_channel input_file in
   parse name lexbuf
 
+let parse_file name : sourcespan program =
+  name 
+  |> string_of_file
+  |> parse_string name
 
-let run_file runner filename =
-  filename
-    |> string_of_file
-    |> parse_string filename
-    |> runner
+let run_string name prog =
+  prog
+  |> parse_string name
+  |> interpret_program
 
-let file_to_out_err runner filename =
-  let value = 
-    filename
-    |> run_file runner
-  in
+let run_file name =
+  string_of_file name
+  |> run_string name
+
+let value_to_out_err value =
   match value with
-    | VErr _ -> ("", (string_of_value value))
-    | _ -> ((string_of_value value), "")
+    | Error(errs) -> "", string_of_errors errs
+    | Ok(VErr(_) as v) -> "", string_of_value v
+    | Ok(_ as v) -> string_of_value v, ""
+
+let string_to_out_err name prog =
+  prog
+  |> run_string name
+  |> value_to_out_err
+
+let file_to_out_err filename =
+  filename
+  |> run_file
+  |> value_to_out_err
 
 
 let contains s1 s2 =
@@ -168,23 +185,27 @@ Otherwise, assert that there is no error output
 
 NOTE: to ensure that there is just some error and not care about its contents, make it Some("")
 *)
-let t_triplet runner (src, m_out, m_err) =
+let t_triplet (src, m_out, m_err) =
   src>::(fun _ ->
-  let actual_output, actual_error_output = file_to_out_err runner src in
-  begin
-    match m_out with
-      | None -> ()
-      | Some(expected_output_filename) ->
-          let expected_output = string_of_file expected_output_filename in
-          assert_string_equal expected_output actual_output
-  end;
-  begin
-    match m_err with
-      | None -> assert_string actual_error_output
-      | Some(expected_error_output_filename) -> 
+  let actual_output, actual_error_output = 
+    src
+    |> file_to_out_err
+  in
+  (* printf "|||%s||||||%s, %s||||||||\n\n" src actual_output actual_error_output; *)
+  match m_out, m_err with
+    | None, None -> assert_string actual_error_output
+    | None, Some(expected_error_output_filename) ->
         let expected_error_output = string_of_file expected_error_output_filename in
         assert_substring expected_error_output actual_error_output
-  end
+    | Some(expected_output_filename), None ->
+        assert_string actual_error_output;
+        let expected_output = string_of_file expected_output_filename in
+        assert_string_equal expected_output actual_output
+    | Some(expected_output_filename), Some(expected_error_output_filename) ->
+        let expected_output = string_of_file expected_output_filename in
+        assert_string_equal expected_output actual_output;
+        let expected_error_output = string_of_file expected_error_output_filename in
+        assert_substring expected_error_output actual_error_output
   )
 
 
@@ -197,9 +218,9 @@ let combine_opt_triples opt_triples =
   in
   List.rev (help opt_triples [])
 
-let input_file_suite runner =
+let input_file_suite() =
   "inputs">:::(
     get_input_test_triplets "inputs" "mml" "out" "err"
     |> combine_opt_triples
-    |> List.map (t_triplet runner)
+    |> List.map t_triplet
   )

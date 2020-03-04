@@ -17,7 +17,23 @@ let get_child_exprs e =
         [value;body]
     | EApp(func, arg, _) -> [func;arg]
 
-let check_well_formedness p =
+let detect_dup_names tagged_names =
+  let rec aux tagged_names seen errs =
+    match tagged_names with
+      | [] -> errs
+      | (name, tag)::rest_tagged_names ->
+          let maybe_original =
+            seen |> List.find_opt (fun (original_name, original_tag) -> name = original_name)
+          in
+          let new_errs, new_seen = match maybe_original with
+            | None -> errs, (name, tag)::seen
+            | Some(original_name, original_tag) -> (DuplicateId(name, tag, original_tag)::errs), seen
+          in
+          aux rest_tagged_names new_seen new_errs
+  in
+  aux tagged_names [] []
+
+let check_well_formedness p : (sourcespan program, exn list) result =
   let rec helpE env e =
     match e with
       | EInt(_)
@@ -31,13 +47,21 @@ let check_well_formedness p =
           then []
           else [UnboundId(name, tag)]
       | ELet((tagged_names, val_expr, bind_tag), body_expr, tag) ->
-          let dup_name_errs = 
-          let names = tagged_names |> List.map fst in
-          let val_errs = helpE env val_expr in
-          let env' = names @ env in
+          let main_name, dup_errs, val_env = match tagged_names with
+            | (name, name_tag)::[] -> name, [], env
+            | (name, name_tag)::rest ->
+                  name, detect_dup_names rest, List.map fst rest @ env
+            | [] -> raise (InternalError("encountered let with empty bind in well formedness check"))
+          in
+          let val_errs = helpE val_env val_expr in
+          let env' = main_name::env in
           let body_errs = helpE env' body_expr in
-          val_errs @ body_errs
-  in 2
+          dup_errs @ val_errs @ body_errs
+  in
+  let (e, tag) = p in
+  match helpE [] e with
+    | [] -> Ok(p)
+    | _::_ as errs -> Error(errs)
 
 let interpreter_failure_handler (evaluator : 'a expr -> 'a value) (on_err : exn -> 'a expr list -> 'a -> 'a value) (e : 'a expr) (on_success : 'a value -> 'b) =
   let value = evaluator e in
@@ -54,7 +78,8 @@ let add_to_trace_if_err e v =
     | VErr(exn, exprs, tag) -> VErr(exn, e::exprs, tag)
     | _ -> v
 
-let interpret (p : sourcespan program) : sourcespan value =
+(** assumes well-formedness *)
+let evaluate (p : sourcespan program) : sourcespan value =
   let rec helpE (env : 'a value envt) e =
     log @@ Printf.sprintf "evaluating %s\nwith environment\n%s\n\n" (string_of_expr e)
       (env
@@ -140,3 +165,8 @@ let interpret (p : sourcespan program) : sourcespan value =
   in
   let (e, tag) = p in
   helpE [] e
+
+let interpret_program p =
+  match check_well_formedness p with
+    | Error(errs) -> Error(errs)
+    | Ok(p) -> Ok(evaluate p)

@@ -20,7 +20,7 @@ let t_parse name prog expected =
   t_any name expected (untag (parse_string (name ^ ".mml") prog)) ~printer:string_of_program
 
 let t_interpret name prog expected =
-  t_any name expected (prog |> parse_string (name ^ ".mml") |> interpret |> string_of_value) ~printer:(fun s -> s)
+  t_any name expected (prog |> string_to_out_err (name ^ ".mml") |> fst) ~printer:(fun s -> s)
 
 
 let contains s1 s2 =
@@ -31,15 +31,15 @@ let contains s1 s2 =
     with Not_found -> false
 
 let t_error name prog substring =
-  let value = prog |> parse_string (name ^ ".mml") |> interpret in
-  let value_string = string_of_value value in
+  let out, err = prog |> string_to_out_err (name ^ ".mml") in
   name>::(fun _ -> 
-    match value with
-      | VErr(_) ->
-          if contains value_string substring
+    match err with
+      | "" -> assert_failure (Printf.sprintf "no error found. got %s" out)
+      | _ ->
+          if contains err substring
           then assert_string ""
-          else assert_equal substring value_string ~printer:(fun s -> s)
-      | _ -> assert_failure (Printf.sprintf "no error found. got %s" value_string))
+          else assert_equal substring err ~printer:(fun s -> s)
+  )
 
 
 let suite = "suite">:::[
@@ -136,5 +136,5 @@ let () =
     suite;
     parse_tests;
     integration_tests;
-    input_file_suite interpret;
+    input_file_suite();
   ]
