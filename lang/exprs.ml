@@ -1,4 +1,5 @@
 type sourcespan = Lexing.position * Lexing.position
+let dummy_span = (Lexing.dummy_pos, Lexing.dummy_pos)
 
 type prim1 =
   | Not

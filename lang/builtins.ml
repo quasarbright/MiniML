@@ -3,8 +3,6 @@ open Values
 open Errors
 open Types
 
-let ds : sourcespan = Lexing.dummy_pos, Lexing.dummy_pos
-
 let type_err_behavior tag = VErr(Failure("type error"), [], tag)
 
 let type_mismatch tag expected_type v =
@@ -13,7 +11,7 @@ let type_mismatch tag expected_type v =
 let assert_typ v expected_type on_err on_ok =
   let tag = tag_of_value v in
   let actual_type = type_of_value v in
-  if untag_type actual_type = untag_type expected_type
+  if same_type actual_type expected_type
   then on_ok v
   else on_err (TypeMismatch(expected_type, actual_type, tag))
 
@@ -26,8 +24,8 @@ let (>>=) (v, expected_type) on_ok =
     on_ok
 
 let wrap_int_binop binop tag left right =
-    (left, TyInt(ds)) >>= (fun _ ->
-    (right, TyInt(ds)) >>= (fun _ ->
+    (left, int dummy_span) >>= (fun _ ->
+    (right, int dummy_span) >>= (fun _ ->
         match left, right with
     | VInt(left_num, _), VInt(right_num, _) -> VInt(binop left_num right_num, tag)
     | _ -> raise (InternalError("unexpected type error in wrap_int_binop"))))
@@ -42,8 +40,8 @@ let wrap_int_binop binop tag left right =
 
 
 let wrap_bool_binop binop tag left right =
-  (left, TyBool(ds)) >>= (fun _ ->
-  (right, TyBool(ds)) >>= (fun _ ->
+  (left, bool dummy_span) >>= (fun _ ->
+  (right, bool dummy_span) >>= (fun _ ->
     match left, right with
     | VBool(left_b, _), VBool(right_b, _) -> VBool(binop left_b right_b, tag)
     | _ -> raise (InternalError("unexpected type error in wrap_bool_binop"))))
@@ -54,8 +52,8 @@ let fn_of_prim2 = function
   | Times -> wrap_int_binop Int64.mul
   | Modulo ->
       (fun tag left right ->
-        (left, TyInt(ds)) >>= (fun _ -> 
-        (right, TyInt(ds)) >>= (fun _ ->
+        (left, int dummy_span) >>= (fun _ -> 
+        (right, int dummy_span) >>= (fun _ ->
           match left, right with
             | VInt(left_num, _), VInt(0L, _) -> VErr(DivideByZero(tag), [], tag)
             | VInt(left_num, _), VInt(right_num, _) -> VInt(Int64.rem left_num right_num, tag)
@@ -63,8 +61,8 @@ let fn_of_prim2 = function
         ))
   | Divide ->
       (fun tag left right ->
-        (left, TyInt(ds)) >>= (fun _ -> 
-        (right, TyInt(ds)) >>= (fun _ ->
+        (left, int dummy_span) >>= (fun _ -> 
+        (right, int dummy_span) >>= (fun _ ->
           match left, right with
             | VInt(left_num, _), VInt(0L, _) -> VErr(DivideByZero(tag), [], tag)
             | VInt(left_num, _), VInt(right_num, _) -> VInt(Int64.div left_num right_num, tag)

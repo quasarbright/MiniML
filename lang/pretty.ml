@@ -58,12 +58,16 @@ let string_of_sourcespan ((pstart, pend) : sourcespan) : string =
   sprintf "%s, %d:%d-%d:%d" pstart.pos_fname pstart.pos_lnum (pstart.pos_cnum - pstart.pos_bol)
           pend.pos_lnum (pend.pos_cnum - pend.pos_bol)
 
-let string_of_typ = function
-  | TyInt _ -> "int"
-  | TyBool _ -> "bool"
+let rec string_of_typ = function
   | TyBottom _ -> "<bottom>"
   | TyTop _ -> "<top>"
-  | TyVar(name, _) -> name 
+  | TyVar(name, _) -> name
+  | TyCons(name, typs, tag) when name = arrow_name -> sprintf "(%s)" (String.concat " -> " (List.map string_of_typ typs))
+  | TyCons(name, typs, tag) when name = cross_name -> sprintf "(%s)" (String.concat " * " (List.map string_of_typ typs))
+  | TyCons(name, [t], tag) when name = list_name -> sprintf "[%s]" (string_of_typ t)
+  | TyCons(name, [], tag) -> name
+  | TyCons(name, [t], tag) -> sprintf "(%s %s)" (string_of_typ t) name
+  | TyCons(name, ((_::_::_) as typs), tag) -> sprintf "((%s) %s)" (String.concat ", " (List.map string_of_typ typs)) name
 
 
 let indent_line s = sprintf "\t%s" s

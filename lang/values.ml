@@ -47,7 +47,7 @@ let tag_of_value v =
   helpV v
 
 let type_of_value = function
-  | VInt(_, tag) -> TyInt(tag)
-  | VBool(_, tag) -> TyBool(tag)
+  | VInt(_, tag) -> int tag
+  | VBool(_, tag) -> bool tag
   | VFunc _ -> failwith "function types not yet implemented"
   | VErr(_,_,tag) -> TyBottom(tag)

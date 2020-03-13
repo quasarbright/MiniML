@@ -5,6 +5,7 @@ open Values
 open Builtins
 open InterpreterUtils
 open Phases
+open Types
 
 let get_child_exprs e =
   match e with
@@ -110,7 +111,7 @@ let evaluate (p : sourcespan program) : sourcespan value =
           |> add_to_trace_if_err e
       | EIf(cnd, thn, els, tag) ->
           cnd >>= (fun cnd -> Builtins.(>>=)
-            (cnd, TyBool(ds))
+            (cnd, bool dummy_span)
             (fun v ->
               match v with
                 | VBool(b, _) ->
