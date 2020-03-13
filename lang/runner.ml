@@ -7,6 +7,7 @@ open Values
 open Pretty
 open OUnit2
 open Interpreter
+open Phases
 
 let (>>) f g x = g (f x)
 
@@ -76,20 +77,31 @@ let parse_file name : sourcespan program =
   |> string_of_file
   |> parse_string name
 
+(** evaluates prog as a string to a value *)
 let run_string name prog =
-  prog
-  |> parse_string name
+  (Ok(prog, [])
+  |> add_phase source (fun x -> x)
+  |> add_err_phase parsed (fun input ->
+      try Ok(parse_string name prog)
+      with err -> Error([err])))
   |> interpret_program
+  (* |> parse_string name
+  |> interpret_program *)
 
+(** evaluates the contents of the file at <name> to a value *)
 let run_file name =
   string_of_file name
   |> run_string name
 
-let value_to_out_err value =
+let value_to_out_err (value : sourcespan value pipeline) =
   match value with
-    | Error(errs) -> "", string_of_errors errs
-    | Ok(VErr(_) as v) -> "", string_of_value v
-    | Ok(_ as v) -> string_of_value v, ""
+    | Ok(v, phases) ->
+      begin
+        match v with
+          | (VErr(_) as v) -> "", string_of_value v
+          | (_ as v) -> string_of_value v, ""
+      end
+    | Error(errs, phases) -> "", string_of_errors errs
 
 let string_to_out_err name prog =
   prog

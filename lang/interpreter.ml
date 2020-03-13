@@ -4,6 +4,7 @@ open Errors
 open Values
 open Builtins
 open InterpreterUtils
+open Phases
 
 let get_child_exprs e =
   match e with
@@ -33,7 +34,7 @@ let detect_dup_names tagged_names =
   in
   aux tagged_names [] []
 
-let check_well_formedness p : (sourcespan program, exn list) result =
+let check_well_formedness p : sourcespan program fallible =
   let rec helpE env e =
     match e with
       | EInt(_)
@@ -166,7 +167,10 @@ let evaluate (p : sourcespan program) : sourcespan value =
   let (e, tag) = p in
   helpE [] e
 
-let interpret_program p =
-  match check_well_formedness p with
+let interpret_program (prog : sourcespan program pipeline) =
+  prog
+  |> (add_err_phase well_formed check_well_formedness)
+  |> (add_phase evaluated evaluate)
+  (* match check_well_formedness p with
     | Error(errs) -> Error(errs)
-    | Ok(p) -> Ok(evaluate p)
+    | Ok(p) -> Ok(evaluate p) *)
