@@ -85,33 +85,45 @@ let run_string name prog =
       try Ok(parse_string name prog)
       with err -> Error([err])))
   |> interpret_program
-  (* |> parse_string name
-  |> interpret_program *)
 
 (** evaluates the contents of the file at <name> to a value *)
 let run_file name =
   string_of_file name
   |> run_string name
 
+let value_to_out_err_help (v : sourcespan value) =
+  match v with
+  | (VErr(_) as v) -> "", string_of_value v
+  | (_ as v) -> string_of_value v, ""
+
 let value_to_out_err (value : sourcespan value pipeline) =
   match value with
-    | Ok(v, phases) ->
-      begin
-        match v with
-          | (VErr(_) as v) -> "", string_of_value v
-          | (_ as v) -> string_of_value v, ""
-      end
+    | Ok(v, phases) -> value_to_out_err_help v
     | Error(errs, phases) -> "", string_of_errors errs
+
+let value_to_result (value : sourcespan value pipeline) =
+  value
+  |> (add_phase result value_to_out_err_help)
 
 let string_to_out_err name prog =
   prog
   |> run_string name
   |> value_to_out_err
 
+let string_to_result name prog =
+  prog
+  |> run_string name
+  |> value_to_result
+
 let file_to_out_err filename =
   filename
   |> run_file
   |> value_to_out_err
+
+let file_to_result filename =
+  filename
+  |> run_file
+  |> value_to_result
 
 
 let contains s1 s2 =

@@ -11,8 +11,9 @@ let () =
     (* let p = parse_string filename (string_of_file filename) in
     print_endline (string_of_program p); *)
     let out, err = 
-      filename
-      |> file_to_out_err
+      match file_to_result filename with
+      | Ok((out, err), phases) -> out, err
+      | Error((errs, phases)) -> "", string_of_errors errs
     in
     Printf.printf "%s" out;
     Printf.eprintf "%s" err
