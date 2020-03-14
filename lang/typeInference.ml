@@ -4,7 +4,7 @@ open Exprs
 open Pretty
 open Errors
 open Unify
-
+(* TODO make sure you gensym schematic and unknown variables differently!!!!!!! *)
 (* gives everything a unique tyVar type *)
 let rec tag_expr_with_typs e =
   let count = ref 0 in
