@@ -7,6 +7,7 @@ open Runner
 open Exprs
 open Pretty
 open Interpreter
+open Types
 
 
 
@@ -130,11 +131,17 @@ let integration_tests = "integration_tests">:::[
   t_error "if-not-bool" "if 1 then 1 else 0" "expected bool, but got int";
 ]
 
+let tyvars_in_tests = "tyvars_in_tests">:::[
+  t_any "tvar-simple" ["'x"] (tyvars_in (TyVar("'x", ())));
+  t_any "tvar-cons" ["'x";"'y"] (tyvars_in (TyCons("either", [TyVar("'x", ());TyCons("list", [TyVar("'y", ())], ())], ())));
+]
+
 let () = 
   List.iter run_test_tt_main
   [
     suite;
     parse_tests;
     integration_tests;
+    tyvars_in_tests;
     input_file_suite();
   ]

@@ -4,6 +4,7 @@ type 'a typ =
   | TyVar of string * 'a
   | TyCons of string * 'a typ list * 'a
 
+let var name tag = TyVar(name, tag)
 let arrow_name = "arrow"
 let arrow t1 t2 tag = TyCons(arrow_name, [t2;t2], tag)
 let cross_name = "cross"

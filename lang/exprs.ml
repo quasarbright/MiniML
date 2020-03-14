@@ -1,6 +1,8 @@
 type sourcespan = Lexing.position * Lexing.position
 let dummy_span = (Lexing.dummy_pos, Lexing.dummy_pos)
 
+type tag = int
+
 type prim1 =
   | Not
   | UNegate
@@ -51,6 +53,33 @@ let map_program_tag f (p : 'a program) =
     (map_expr_tag f e, f tag)
 
 let untag (p : 'a program) : unit program = map_program_tag ignore p
+
+let get_children_of_expr e =
+  match e with
+  | EInt(_)
+  | EBool(_)
+  | EId(_) -> []
+  | EPrim1(_, arg_expr, _) -> [arg_expr]
+  | EPrim2(_, left, right, _) -> [left;right]
+  | EIf(cnd, thn, els, _) -> [cnd;thn;els]
+  | ELet((_, val_expr, _), body_expr, _) -> [val_expr; body_expr]
+  | EApp(e1, e2, _) -> [e1;e2]
+
+(**
+applies a function to the children of an expr retaining expr structure
+does not apply to ints, bools, etc
+does not apply to the given expr
+*)
+let recurse_on_children f e =
+  match e with
+  | EInt _
+  | EBool _
+  | EId _ -> e
+  | EPrim1(prim1, arg, tag) -> EPrim1(prim1, f arg, tag)
+  | EPrim2(prim2, left, right, tag) -> EPrim2(prim2, f left, f right, tag)
+  | EIf(cnd, thn, els, tag) -> EIf(f cnd, f thn, f els, tag)
+  | ELet((names, val_expr, binding_tag), body_expr, tag) -> ELet((names, f val_expr, binding_tag), f body_expr, tag)
+  | EApp(e1, e2, tag) -> EApp(f e1, f e2, tag)
 
 
 let get_tag (e : 'a expr) =

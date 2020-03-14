@@ -76,6 +76,8 @@ let string_of_error = function
   | DivideByZero(pos) -> sprintf "Divide by zero at %s" (string_of_sourcespan pos)
   | TypeMismatch(expected, actual, pos) ->
       sprintf "Type error at %s: expected %s, but got %s" (string_of_sourcespan pos) (string_of_typ expected) (string_of_typ actual)
+  | RecursiveType(name, t, pos) ->
+      sprintf "Recursive type at %s: %s occurs in %s" (string_of_sourcespan pos) name (string_of_typ t)
   | ArgumentError(msg, pos) -> sprintf "Argument error at %s: %s" (string_of_sourcespan pos) msg
   | InternalError(msg) -> sprintf "Internal error: %s" msg
   | UnboundId(name, pos) -> sprintf "The name %s is not in scope at %s" name (string_of_sourcespan pos)
