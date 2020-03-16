@@ -187,7 +187,7 @@ let rec typeCheck (gamma : 'a typ_env) (name_supply : name_supply) (expr : 'a ie
         let es = List.map snd bindings in
         (* schemify a (monomorphic) type *)
         let new_bvar (x, tvn) = (x, SForall([], TyVar(tvn, tag))) in
-        (*  *)
+        (* schemify a list of (monomorphic) types *)
         let new_bvars (xs : string list) ns = List.map new_bvar (special_zip xs (name_sequence ns)) in
         (* un-schemifies a monomorphic scheme *)
         let old_bvar (x, SForall(names, t)) =
