@@ -8,7 +8,7 @@ type 'a scheme = SForall of string list * 'a typ
 
 let var name tag = TyVar(name, tag)
 let arrow_name = "arrow"
-let arrow t1 t2 tag = TyCons(arrow_name, [t2;t2], tag)
+let arrow t1 t2 tag = TyCons(arrow_name, [t1;t2], tag)
 let cross_name = "cross"
 let cross ts tag = TyCons(cross_name, ts, tag)
 let int_name = "int"

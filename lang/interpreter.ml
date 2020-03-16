@@ -81,7 +81,7 @@ let add_to_trace_if_err e v =
     | _ -> v
 
 (** assumes well-formedness *)
-let evaluate (p : sourcespan program) : sourcespan value =]
+let evaluate (p : sourcespan program) : sourcespan value =
   let rec helpE (env : 'a value envt) e =
     log @@ Printf.sprintf "evaluating %s\nwith environment\n%s\n\n" (string_of_expr e)
       (env

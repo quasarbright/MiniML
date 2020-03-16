@@ -29,9 +29,9 @@ type 'a expr =
   | EPrim1 of prim1 * 'a expr * 'a
   | EPrim2 of prim2 * 'a expr * 'a expr * 'a
   | EIf of 'a expr * 'a expr * 'a expr * 'a
-  | ELet of 'a bind * 'a expr * 'a
+  | ELet of 'a binding * 'a expr * 'a
   | EApp of 'a expr * 'a expr * 'a
-and 'a bind = (string * 'a) list * 'a expr * 'a
+and 'a binding = (string * 'a) list * 'a expr * 'a
 
 type 'a program = 'a expr * 'a
 
